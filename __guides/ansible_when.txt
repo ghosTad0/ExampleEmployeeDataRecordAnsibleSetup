@@ -1,0 +1,14 @@
+---
+- hosts: your_hosts
+  tasks:
+    - name: Check if nginx service is installed
+      shell:
+        cmd: systemctl status nginx
+      register: nginx_status
+      ignore_errors: yes
+
+    - name: Stop nginx service if installed and running
+      systemd:
+        name: nginx
+        state: stopped
+      when: "'Active: active (running)' in nginx_status.stdout"

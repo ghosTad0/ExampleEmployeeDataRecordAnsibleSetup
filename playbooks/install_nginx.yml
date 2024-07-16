@@ -1,0 +1,16 @@
+---
+- name: Nginx install playbook
+  hosts: webservers
+  become: yes
+  gather_facts: yes  # Include gathering facts
+  tasks:
+    - name: Gather facts
+      setup:
+    - name: install nginx
+      yum:
+        name: nginx
+        state: latest
+    - name: start nginx
+      service:
+        name: nginx
+        state: started

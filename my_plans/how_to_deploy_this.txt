@@ -1,0 +1,12 @@
+I have 3 main things to do, to get this done.
+
+- setting up mysql
+- setting up mginx
+- setting up the real application
+
+
+Setting up mysql
+    - setting up mysql binary, dnf install is hard and spoils the system with a lot of garbage
+    - used docker to up a mysql container and its pretty ez. (https://docs.docker.com/engine/install/rhel/). Also for installing docker
+      we can ezly write an ansible playbook and can trigger it when we want. (for example before turning mysql container up, or create 
+      create from the beginning, i can check the server's status of docker installation, if docker was not found, heck run installation playbook)

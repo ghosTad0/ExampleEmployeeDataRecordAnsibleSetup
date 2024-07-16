@@ -1,0 +1,19 @@
+---
+- name: Nginx Uninstall Playbook
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Gather facts
+      setup:
+    - name: stop nginx
+      service:
+        name: nginx
+        state: stopped
+
+    - name: uninstall nginx using yum
+      shell:
+        cmd: |
+          yum remove nginx -y &&
+          # yum purge nginx -y &&
+          yum autoremove -y
+      ignore_errors: yes
