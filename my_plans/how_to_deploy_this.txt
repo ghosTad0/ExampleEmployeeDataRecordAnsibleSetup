@@ -1,7 +1,7 @@
 I have 3 main things to do, to get this done.
 
 - setting up mysql
-- setting up mginx
+- setting up nginx
 - setting up the real application
 
 
