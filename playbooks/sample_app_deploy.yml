@@ -1,73 +1,168 @@
 ---
-- name: Deploy web application
+- name: SampleApp Deploy Playbook
   hosts: webservers
+  vars_files:
+    - ../vars/deploy_sample_app_vars.yml
   become: yes
-  vars:
-    app_name: my_web_app
-    app_src: /path/to/your/app/source
-    app_dest: /var/www/html
-    app_user: www-data
-    app_group: www-data
-
   tasks:
-    - name: Ensure the application directory exists
-      file:
-        path: "{{ app_dest }}"
-        state: directory
-        owner: "{{ app_user }}"
-        group: "{{ app_group }}"
+    - name: yum update
+      ansible.builtin.shell: yum update -y
 
-    - name: Copy application files
+    - name: Test npm existance
+      ansible.builtin.shell: npm --version
+      ignore_errors: yes
+      register: npm_installation_details
+
+    - name: Adding node to dnf repo
+      ansible.builtin.shell: dnf module enable nodejs:20 -y
+      when: npm_installation_details.failed
+
+    - name: Install node
+      ansible.builtin.shell: dnf install nodejs -y
+      when: npm_installation_details.failed
+
+    - name: Check App source location existance
+      ansible.builtin.stat:
+        path: "{{ sample_app_src_dir }}"
+      register: app_source_location_details
+
+    - name: Create a location to save sample app
+      ansible.builtin.file:
+        path: "{{ sample_app_src_dir }}"
+        state: directory
+        mode: '0755' # Optional: Set permissions
+      when: not app_source_location_details.stat.isdir
+
+    - name: Check sample app git repo existance
+      ansible.builtin.stat:
+        path: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
+      register: sample_app_repo_details
+
+    # - name: Print a debug message
+    #   ansible.builtin.debug:
+    #     msg: "Path exists and is a directory"
+    #   when: p.stat.isdir is defined and p.stat.isdir
+
+    - name: Install git
+      yum:
+        name: git
+        state: latest
+
+    - name: Git clone the source of sample app
+      git:
+        repo: "{{ sample_app_git_repo }}"
+        dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
+        clone: yes
+        update: yes
+      when: not sample_app_repo_details.stat.isdir
+
+    - name: Check the mysql_docker container is running or not
+      ansible.builtin.shell:
+        cmd:  docker ps
+      register: mysql_docker_status
+
+    # - name: Check the user after become no
+    #   become: no  # it's a bash alias for the cloud-user profile. it wont be there for "root"
+    #   ansible.builtin.shell:
+    #     cmd:  whoami   # yeah this become: no works
+
+    - name: Starting mysql_docker container (if not already running)
+      become: no  # it's a bash alias for the cloud-user profile. it wont be there for "root"
+      ansible.builtin.shell:
+        cmd:  |
+          source ~/.bashrc
+          start_mysql
+      when: "not 'mysql_docker' in mysql_docker_status.stdout"
+
+    - pause:
+        seconds: 15
+
+    - name: Check the existance of sample app database
+      ansible.builtin.shell:
+        cmd: docker exec -it mysql_docker mysql -u user -ppassword -e "show databases"
+      register: mysql_db_list
+
+    - name: Create the db required for sample app only when it's not there
+      ansible.builtin.shell:
+        cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_app_db;"
+      register: create_db_init_attempt_status
+      when: not 'employee_app_db' in mysql_db_list.stdout
+      ignore_errors: yes
+
+    - name: Granting db create previleges (if not)
+      ansible.builtin.shell:
+        cmd: docker exec -it mysql_docker mysql -u root -proot -e "GRANT ALL PRIVILEGES ON *.* TO 'user'@'%';"
+      when: create_db_init_attempt_status.failed | default(False)
+
+    - name: Create the db required for sample app retry
+      ansible.builtin.shell:
+        cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_app_db;"
+      when: create_db_init_attempt_status.failed | default(False)
+    # # - name: Setup nginx, for now ignore it, if it seems mandatory (you'll identify when testing) set it up.
+
+    - name: Creating local env file needed for the dev mode run
       copy:
-        src: "{{ app_src }}/"
-        dest: "{{ app_dest }}/"
-        owner: "{{ app_user }}"
-        group: "{{ app_group }}"
+        src: "{{ assets_path }}/.env.local"
+        dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+
+    - name: Installing node dependancies for the sample application
+      ansible.builtin.shell:
+        cmd:  npm install
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    - name: Installing global node dependancies
+      ansible.builtin.shell:
+        cmd: npm install -g dotenv-cli pm2
+
+    - name: Checking npm global install directory
+      ansible.builtin.shell:
+        cmd: npm list -g
+
+    - name: Running migration for sample application
+      ansible.builtin.shell:
+        cmd:  export PATH="$PATH:/usr/local/bin" && npm run migrate:dev
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    - name: Running db client build for the sample application
+      ansible.builtin.shell:
+        cmd:  export PATH="$PATH:/usr/local/bin" && npm run prisma:generate
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    # - name: Running the sample application
+    #   ansible.builtin.shell:
+    #     cmd:  npm run dev
+    #     chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    - name: Create pm2 js file directory
+      ansible.builtin.file:
+        path: "{{ pm2_js_file_directory }}"
+        state: directory
         mode: '0755'
 
-    - name: Install required packages
-      apt:
-        name: "{{ item }}"
-        state: present
-      loop:
-        - nginx
-        - python3
-        - python3-pip
+    - name: Copy pm2 ecosystem for running app
+      copy:
+        src: "{{ assets_path }}/ecosystem-employee-record-book.config.js"
+        dest: "{{ pm2_js_file_directory }}"
 
-    - name: Copy Nginx configuration
-      template:
-        src: templates/nginx.conf.j2
-        dest: /etc/nginx/sites-available/{{ app_name }}
-        mode: '0644'
+    - name: Install log rotate lib for pm2
+      ansible.builtin.shell:
+        cmd: export PATH="$PATH:/usr/local/bin" && pm2 install pm2-logrotate
 
-    - name: Enable Nginx site
-      file:
-        src: /etc/nginx/sites-available/{{ app_name }}
-        dest: /etc/nginx/sites-enabled/{{ app_name }}
-        state: link
+    - name: Setting up log rotate feature properties for pm2
+      ansible.builtin.shell:
+        cmd: |
+          export PATH="$PATH:/usr/local/bin"
+          pm2 set pm2-logrotate:max_size 10M
+          pm2 set pm2-logrotate:retain 30
+          pm2 set pm2-logrotate:compress true
 
-    - name: Remove default Nginx site
-      file:
-        path: /etc/nginx/sites-enabled/default
-        state: absent
+    - name: Create the log folder structure
+      ansible.builtin.file:
+        path: "{{ pm2_js_logs_directory }}"
+        state: directory
+        mode: '0755'
 
-    - name: Restart Nginx
-      service:
-        name: nginx
-        state: restarted
-
-    - name: Install Python dependencies
-      pip:
-        requirements: "{{ app_src }}/requirements.txt"
-        virtualenv: "{{ app_dest }}/venv"
-        virtualenv_python: python3
-
-    - name: Start application (example with Gunicorn)
-      command: "{{ app_dest }}/venv/bin/gunicorn --workers 3 --bind 0.0.0.0:8000 wsgi:application"
-      args:
-        chdir: "{{ app_dest }}"
-      register: gunicorn_output
-
-    - name: Debug Gunicorn output
-      debug:
-        var: gunicorn_output
+    - name: Run the Sample app with pm2
+      ansible.builtin.shell:
+        cmd: export PATH="$PATH:/usr/local/bin" && pm2 start ecosystem-employee-record-book.config.js
+        chdir: "{{ pm2_js_file_directory }}"

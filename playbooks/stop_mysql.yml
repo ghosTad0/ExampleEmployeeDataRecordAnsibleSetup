@@ -1,0 +1,7 @@
+---
+- name: Playbook for setting up MySQL using Docker
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Down the mysql container
+    #- name: Remove entire dir structure related to mysql (do i wanna do it?)

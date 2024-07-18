@@ -4,7 +4,7 @@
   become: yes
   tasks:
     - name: Remove docker libraries
-      ansible.builtin.shell: "yum remove docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras"
+      ansible.builtin.shell: yum remove docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
 
     - name: Deleting docker data directories
       ansible.builtin.file:

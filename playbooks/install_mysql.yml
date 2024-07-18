@@ -1,9 +1,0 @@
----
-- name: Playbook for setting up MySQL using Docker
-  hosts: webservers
-  become: yes
-  tasks:
-    - name: Installing libs
-    - name: Creating directories
-    - name: Copying docker compose file
-    - name: Docker compose up mysql

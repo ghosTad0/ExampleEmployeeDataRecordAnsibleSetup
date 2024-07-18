@@ -1,0 +1,10 @@
+---
+- name: Playbook for setting up MySQL using Docker
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Directory to save the docker compose files (for the tools needed for webapps)
+    - name: Copy docker compose if it's not there.
+    - name: Create the mount directory structure
+    - name: Changing the mount directory tree ownership
+    - name: Docker compose up mysql

@@ -7,7 +7,10 @@
       setup:
 
     - name: Setup yum repository for docker install
-      ansible.builtin.shell: "yum install -y yum-utils; yum-config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo"
+      ansible.builtin.shell:
+        cmd: |
+          yum install -y yum-utils
+          yum-config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
 
     - name: Docker installation on yum
       yum:
