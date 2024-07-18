@@ -132,4 +132,37 @@
     #   ansible.builtin.shell:
     #     cmd:  npm run dev
     #     chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
-  
+
+    - name: Create pm2 js file directory
+      ansible.builtin.file:
+        path: "{{ pm2_js_file_directory }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy pm2 ecosystem for running app
+      copy:
+        src: "{{ assets_path }}/ecosystem-employee-record-book.config.js"
+        dest: "{{ pm2_js_file_directory }}"
+
+    - name: Install log rotate lib for pm2
+      ansible.builtin.shell:
+        cmd: export PATH="$PATH:/usr/local/bin" && pm2 install pm2-logrotate
+
+    - name: Setting up log rotate feature properties for pm2
+      ansible.builtin.shell:
+        cmd: |
+          export PATH="$PATH:/usr/local/bin"
+          pm2 set pm2-logrotate:max_size 10M
+          pm2 set pm2-logrotate:retain 30
+          pm2 set pm2-logrotate:compress true
+
+    - name: Create the log folder structure
+      ansible.builtin.file:
+        path: "{{ pm2_js_logs_directory }}"
+        state: directory
+        mode: '0755'
+
+    - name: Run the Sample app with pm2
+      ansible.builtin.shell:
+        cmd: export PATH="$PATH:/usr/local/bin" && pm2 start ecosystem-employee-record-book.config.js
+        chdir: "{{ pm2_js_file_directory }}"
