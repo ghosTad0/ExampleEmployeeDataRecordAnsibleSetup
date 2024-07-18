@@ -1,0 +1,8 @@
+- name: Check if file exists using stat module
+  stat:
+    path: /path/to/file
+  register: file_status
+
+- name: Print file status
+  debug:
+    var: file_status.stat.exists

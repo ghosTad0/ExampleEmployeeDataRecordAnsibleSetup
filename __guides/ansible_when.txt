@@ -12,3 +12,11 @@
         name: nginx
         state: stopped
       when: "'Active: active (running)' in nginx_status.stdout"
+
+
+
+#when: nginx_status.failed and "'Active: active (running)' in nginx_status.stdout"
+#when: nginx_status.failed == false and "'Active: active (running)' in nginx_status.stdout"
+#when: not nginx_status.failed and "'Active: active (running)' in nginx_status.stdout"
+#failed_when: "'Active: active (running)' in nginx_status.stdout"
+#THESE ARE ALL POSSIBLE CONDITIONAL STUFF IN ANSIBLE
