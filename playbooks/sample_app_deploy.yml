@@ -54,7 +54,8 @@
         dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
         clone: yes
         update: yes
-      when: not sample_app_repo_details.stat.isdir
+      # when: (not sample_app_repo_details.stat.exists) and (not (sample_app_repo_details.stat.isdir | default(True))) #wrong
+      when: not (sample_app_repo_details.stat.isdir | default(False)) #taken after evaluating SOP
 
     - name: Check the mysql_docker container is running or not
       ansible.builtin.shell:

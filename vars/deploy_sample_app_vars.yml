@@ -5,3 +5,5 @@ assets_path: /home/tuan/MyDir/office_work/AAP/__sampleApps/__ansible_deployments
 sample_app_logs_directory: /hms/logs/employee_record_book_logs
 pm2_js_file_directory: /hms/installs/pm2_js_files
 pm2_js_logs_directory: /hms/logs/employee_record_book_logs
+sample_app_pm2_js_file: ecosystem-employee-record-book.config.js
+sample_app_pm2_app_name: employee-record-book

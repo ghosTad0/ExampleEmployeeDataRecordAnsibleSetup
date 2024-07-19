@@ -1,0 +1,37 @@
+---
+- name: Sample Application Undeploy Playbook
+  hosts: webservers
+  become: yes
+  vars_files:
+    - ../vars/deploy_sample_app_vars.yml
+  tasks:
+    - name: Check pm2 job list
+      ansible.builtin.shell:
+        cmd: |
+          export PATH="$PATH:/usr/local/bin"
+          pm2 list
+      register: pm2_job_list_details
+
+    - name: Stop and delete the sample application from pm2 job list (if job exists)
+      ansible.builtin.shell:
+        cmd: |
+          export PATH="$PATH:/usr/local/bin"
+          pm2 stop {{ sample_app_pm2_app_name }}
+          pm2 delete {{ sample_app_pm2_app_name }}
+      when: "sample_app_pm2_app_name in pm2_job_list_details.stdout"
+        
+    - name: Remove the pm2 js file from the pm2 js files list (if job exists)
+      ansible.builtin.file:
+        path: "{{ pm2_js_file_directory }}/{{ sample_app_pm2_js_file }}"
+        state: absent
+      when: "sample_app_pm2_app_name in pm2_job_list_details.stdout"
+
+    # - name: Remove the logs
+    #   ansible.builtin.file:
+    #     path: "{{ pm2_js_logs_directory }}"
+    #     state: absent
+
+    - name: Remove the app from /hms/apps
+      ansible.builtin.file:
+        path: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
+        state: absent
