@@ -1,0 +1,7 @@
+docker_compose_file_directory: /hms/installs/docker_compose_installations
+mysql_volume_mounts_dir: /hms/data/docker_volume_mounts/mysql_docker
+mysql_config_directory_name: mysql_config
+mysql_data_directory_name: mysql_data
+mysql_config_file_name: custom_configs.cnf
+ubuntu_default_user: ubuntu
+

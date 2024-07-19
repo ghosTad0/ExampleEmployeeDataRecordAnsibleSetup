@@ -1,7 +1,6 @@
 sample_app_src_dir: /hms/apps
 sample_app_git_repo: https://github.com/ghosTad0/ExampleEmployeeDataRecord.git
 sample_app_name: ExampleEmployeeDataRecord
-assets_path: /home/tuan/MyDir/office_work/AAP/__sampleApps/__ansible_deployments_for_apps/employee_recorder_ansible_deployment/assets
 sample_app_logs_directory: /hms/logs/employee_record_book_logs
 pm2_js_file_directory: /hms/installs/pm2_js_files
 pm2_js_logs_directory: /hms/logs/employee_record_book_logs

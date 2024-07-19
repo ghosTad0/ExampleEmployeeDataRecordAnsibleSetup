@@ -1,0 +1,23 @@
+services:
+  mysql-db:
+    container_name: mysql_docker
+    image: mysql:8.0.23
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - /hms/data/docker_volume_mounts/mysql_docker/mysql_data:/var/lib/mysql
+      - /hms/data/docker_volume_mounts/mysql_docker/mysql_config:/etc/mysql/conf.d
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+    networks:
+      static-network:
+        ipv4_address: 152.20.100.2
+networks:
+  static-network:
+    ipam:
+      config:
+        - subnet: 152.20.0.0/16

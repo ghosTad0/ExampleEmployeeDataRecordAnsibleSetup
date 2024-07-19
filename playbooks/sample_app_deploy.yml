@@ -3,6 +3,7 @@
   hosts: webservers
   vars_files:
     - ../vars/deploy_sample_app_vars.yml
+    - ../vars/common_vars.yml
   become: yes
   tasks:
     - name: yum update

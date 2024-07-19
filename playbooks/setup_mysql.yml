@@ -1,10 +1,61 @@
 ---
 - name: Playbook for setting up MySQL using Docker
-  hosts: webservers
+  hosts: appservers
+  vars_files:
+  - ../vars/setup_mysql_in_docker_vars.yml
+  - ../vars/common_vars.yml
   become: yes
   tasks:
     - name: Directory to save the docker compose files (for the tools needed for webapps)
-    - name: Copy docker compose if it's not there.
+      ansible.builtin.file:
+        path: "{{ docker_compose_file_directory }}"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+
+    - name: Docker compose file exist check
+      ansible.builtin.stat:
+        path: "{{ docker_compose_file_directory }}/mysql_docker_compose.yml"
+      register: mysql_docker_compose_details
+        
+    - name: Copy docker compose file
+      copy:
+        src: "{{ assets_path }}/mysql_docker_compose.yml"
+        dest: "{{ docker_compose_file_directory }}/mysql_docker_compose.yml"
+      when: not mysql_docker_compose_details.stat.exists
+
     - name: Create the mount directory structure
+      ansible.builtin.file:
+        path: "{{ mysql_volume_mounts_dir }}/{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ mysql_config_directory_name }}"
+        - "{{ mysql_data_directory_name }}"
+
+    - name: Copy mysql config file to the configs directory
+      copy:
+        src: "{{ assets_path }}/{{ mysql_config_file_name }}"
+        dest: "{{ mysql_volume_mounts_dir }}/{{ mysql_config_directory_name }}/{{ mysql_config_file_name }}"
+
     - name: Changing the mount directory tree ownership
-    - name: Docker compose up mysql
+      ansible.builtin.shell:
+        cmd: chown -R 999:999 {{ mysql_volume_mounts_dir }}
+
+    - name: Ensure specific lines are present in the file
+      become: no
+      ansible.builtin.lineinfile:
+        path: "~/.bashrc"
+        line: "{{ item }}"
+        create: yes  # Create the file if it does not exist
+      loop:
+        - alias start_mysql="docker compose -f {{ docker_compose_file_directory }}/mysql_docker_compose.yml up -d"
+        - alias stop_mysql="docker compose -f {{ docker_compose_file_directory }}/mysql_docker_compose.yml down"
+        - alias access_mysql_as_user="docker exec -it {{ mysql_docker_container_name }} mysql -uuser -ppassword"
+
+    # - name: Docker compose up mysql
+    #   ansible.builtin.shell:
+    #      cmd: |
+    #       source ~/.bashrc
+    #       start_mysql

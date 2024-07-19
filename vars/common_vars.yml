@@ -1,0 +1,2 @@
+assets_path: /home/tuan/MyDir/office_work/AAP/__sampleApps/__ansible_deployments_for_apps/employee_recorder_ansible_deployment/assets
+mysql_docker_container_name: mysql_docker
