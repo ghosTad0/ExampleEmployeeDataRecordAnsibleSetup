@@ -4,4 +4,10 @@
   become: yes
   tasks:
     - name: Down the mysql container
+      become: no
+      ansible.builtin.shell:
+         cmd: |
+          source ~/.bashrc
+          stop_mysql
+
     #- name: Remove entire dir structure related to mysql (do i wanna do it?)

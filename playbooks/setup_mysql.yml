@@ -23,6 +23,8 @@
       copy:
         src: "{{ assets_path }}/mysql_docker_compose.yml"
         dest: "{{ docker_compose_file_directory }}/mysql_docker_compose.yml"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
       when: not mysql_docker_compose_details.stat.exists
 
     - name: Create the mount directory structure
@@ -54,8 +56,9 @@
         - alias stop_mysql="docker compose -f {{ docker_compose_file_directory }}/mysql_docker_compose.yml down"
         - alias access_mysql_as_user="docker exec -it {{ mysql_docker_container_name }} mysql -uuser -ppassword"
 
-    # - name: Docker compose up mysql
-    #   ansible.builtin.shell:
-    #      cmd: |
-    #       source ~/.bashrc
-    #       start_mysql
+    - name: Docker compose up mysql
+      become: no
+      ansible.builtin.shell:
+         cmd: |
+          source ~/.bashrc
+          start_mysql
