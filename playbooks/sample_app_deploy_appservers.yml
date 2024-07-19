@@ -4,6 +4,7 @@
   vars_files:
     - ../vars/deploy_sample_app_vars.yml
     - ../vars/common_vars.yml
+    - ../vars/setup_mysql_in_docker_vars.yml
   become: yes
   tasks:
 
@@ -25,9 +26,7 @@
     - name: Starting mysql_docker container (if not already running)
       become: no  # it's a bash alias for the cloud-user profile. it wont be there for "root"
       ansible.builtin.shell:
-        cmd:  |
-          source ~/.bashrc
-          start_mysql
+        cmd: docker compose -f {{ docker_compose_file_directory }}/mysql_docker_compose.yml up -d
       when: "not 'mysql_docker' in mysql_docker_status.stdout"
 
     - pause:
