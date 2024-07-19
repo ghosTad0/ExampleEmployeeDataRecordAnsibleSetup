@@ -58,7 +58,9 @@
 
     - name: Docker compose up mysql
       become: no
+      # ansible.builtin.shell:
+      #    cmd: |
+      #     source ~/.bashrc
+      #     start_mysql     #Does  not work becz of a known bug
       ansible.builtin.shell:
-         cmd: |
-          source ~/.bashrc
-          start_mysql
+        cmd: docker compose -f {{ docker_compose_file_directory }}/mysql_docker_compose.yml up -d

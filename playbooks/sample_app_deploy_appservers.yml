@@ -1,0 +1,56 @@
+---
+- name: SampleApp Deploy Playbook for AppServers
+  hosts: appservers
+  vars_files:
+    - ../vars/deploy_sample_app_vars.yml
+    - ../vars/common_vars.yml
+  become: yes
+  tasks:
+
+    - name: Checking user of appservers  #This is for neglecting first time connect issue for appservers in ansible.
+      ansible.builtin.shell:
+        cmd: whoami
+      ignore_errors: yes
+
+    - name: Check the mysql_docker container is running or not
+      ansible.builtin.shell:
+        cmd:  docker ps
+      register: mysql_docker_status
+
+    # - name: Check the user after become no
+    #   become: no  # it's a bash alias for the cloud-user profile. it wont be there for "root"
+    #   ansible.builtin.shell:
+    #     cmd:  whoami   # yeah this become: no works
+
+    - name: Starting mysql_docker container (if not already running)
+      become: no  # it's a bash alias for the cloud-user profile. it wont be there for "root"
+      ansible.builtin.shell:
+        cmd:  |
+          source ~/.bashrc
+          start_mysql
+      when: "not 'mysql_docker' in mysql_docker_status.stdout"
+
+    - pause:
+        seconds: 15
+
+    - name: Check the existance of sample app database
+      ansible.builtin.shell:
+        cmd: docker exec -it mysql_docker mysql -u user -ppassword -e "show databases"
+      register: mysql_db_list
+
+    - name: Create the db required for sample app only when it's not there
+      ansible.builtin.shell:
+        cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_app_db;"
+      register: create_db_init_attempt_status
+      when: not 'employee_app_db' in mysql_db_list.stdout
+      ignore_errors: yes
+
+    - name: Granting db create previleges (if not)
+      ansible.builtin.shell:
+        cmd: docker exec -it mysql_docker mysql -u root -proot -e "GRANT ALL PRIVILEGES ON *.* TO 'user'@'%';"
+      when: create_db_init_attempt_status.failed | default(False)
+
+    - name: Create the db required for sample app retry
+      ansible.builtin.shell:
+        cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_app_db;"
+      when: create_db_init_attempt_status.failed | default(False)

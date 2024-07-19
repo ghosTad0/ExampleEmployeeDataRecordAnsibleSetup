@@ -1,13 +1,25 @@
 ---
 - name: Playbook for setting up MySQL using Docker
-  hosts: webservers
+  hosts: appservers
+  vars_files:
+    - ../vars/setup_mysql_in_docker_vars.yml
+    - ../vars/common_vars.yml
   become: yes
   tasks:
-    - name: Down the mysql container
+    - name: Check the user
       become: no
       ansible.builtin.shell:
-         cmd: |
-          source ~/.bashrc
-          stop_mysql
+         cmd: whoami
+
+    - name: Down the mysql container
+      become: no
+      # ansible.builtin.shell:
+      #    cmd: |
+      #     source ~/.bashrc
+      #     stop_mysql
+      # vars:
+      #   ansible_shell_type: bash   #This does not work becz of a known bug. instead of /bin/bash, ansible connects with /bin/sh, this does not support for some commands.
+      ansible.builtin.shell:
+        cmd: docker compose -f {{ docker_compose_file_directory }}/mysql_docker_compose.yml down
 
     #- name: Remove entire dir structure related to mysql (do i wanna do it?)

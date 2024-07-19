@@ -1,0 +1,128 @@
+---
+- name: SampleApp Deploy Playbook
+  hosts: webservers
+  vars_files:
+    - ../vars/deploy_sample_app_vars.yml
+    - ../vars/common_vars.yml
+  become: yes
+  tasks:
+    - name: yum update
+      ansible.builtin.shell: yum update -y
+
+    - name: Test npm existance
+      ansible.builtin.shell: npm --version
+      ignore_errors: yes
+      register: npm_installation_details
+
+    - name: Adding node to dnf repo
+      ansible.builtin.shell: dnf module enable nodejs:20 -y
+      when: npm_installation_details.failed
+
+    - name: Install node
+      ansible.builtin.shell: dnf install nodejs -y
+      when: npm_installation_details.failed
+
+    - name: Check App source location existance
+      ansible.builtin.stat:
+        path: "{{ sample_app_src_dir }}"
+      register: app_source_location_details
+
+    - name: Create a location to save sample app
+      ansible.builtin.file:
+        path: "{{ sample_app_src_dir }}"
+        state: directory
+        mode: '0755' # Optional: Set permissions
+      when: not app_source_location_details.stat.isdir
+
+    - name: Check sample app git repo existance
+      ansible.builtin.stat:
+        path: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
+      register: sample_app_repo_details
+
+    # - name: Print a debug message
+    #   ansible.builtin.debug:
+    #     msg: "Path exists and is a directory"
+    #   when: p.stat.isdir is defined and p.stat.isdir
+
+    - name: Install git
+      yum:
+        name: git
+        state: latest
+
+    - name: Git clone the source of sample app
+      git:
+        repo: "{{ sample_app_git_repo }}"
+        dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
+        clone: yes
+        update: yes
+      # when: (not sample_app_repo_details.stat.exists) and (not (sample_app_repo_details.stat.isdir | default(True))) #wrong
+      when: not (sample_app_repo_details.stat.isdir | default(False)) #taken after evaluating SOP
+
+    # # - name: Setup nginx, for now ignore it, if it seems mandatory (you'll identify when testing) set it up.
+
+    - name: Creating local env file needed for the dev mode run
+      copy:
+        src: "{{ assets_path }}/.env.local"
+        dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+
+    - name: Installing node dependancies for the sample application
+      ansible.builtin.shell:
+        cmd:  npm install
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    - name: Installing global node dependancies
+      ansible.builtin.shell:
+        cmd: npm install -g dotenv-cli pm2
+
+    - name: Checking npm global install directory
+      ansible.builtin.shell:
+        cmd: npm list -g
+
+    - name: Running migration for sample application
+      ansible.builtin.shell:
+        cmd:  export PATH="$PATH:/usr/local/bin" && npm run migrate:dev
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    - name: Running db client build for the sample application
+      ansible.builtin.shell:
+        cmd:  export PATH="$PATH:/usr/local/bin" && npm run prisma:generate
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    # - name: Running the sample application
+    #   ansible.builtin.shell:
+    #     cmd:  npm run dev
+    #     chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    - name: Create pm2 js file directory
+      ansible.builtin.file:
+        path: "{{ pm2_js_file_directory }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy pm2 ecosystem for running app
+      copy:
+        src: "{{ assets_path }}/ecosystem-employee-record-book.config.js"
+        dest: "{{ pm2_js_file_directory }}"
+
+    - name: Install log rotate lib for pm2
+      ansible.builtin.shell:
+        cmd: export PATH="$PATH:/usr/local/bin" && pm2 install pm2-logrotate
+
+    - name: Setting up log rotate feature properties for pm2
+      ansible.builtin.shell:
+        cmd: |
+          export PATH="$PATH:/usr/local/bin"
+          pm2 set pm2-logrotate:max_size 10M
+          pm2 set pm2-logrotate:retain 30
+          pm2 set pm2-logrotate:compress true
+
+    - name: Create the log folder structure
+      ansible.builtin.file:
+        path: "{{ pm2_js_logs_directory }}"
+        state: directory
+        mode: '0755'
+
+    - name: Run the Sample app with pm2
+      ansible.builtin.shell:
+        cmd: export PATH="$PATH:/usr/local/bin" && pm2 start ecosystem-employee-record-book.config.js
+        chdir: "{{ pm2_js_file_directory }}"
