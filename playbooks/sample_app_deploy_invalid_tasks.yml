@@ -1,3 +1,0 @@
----
-import_playbook: sample_app_deploy_appservers.yml
-import_playbook: sample_app_deploy_webservers.yml
