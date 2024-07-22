@@ -70,13 +70,15 @@
         cmd:  npm install
         chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
 
+    - name: Checking npm global install directory, for checking existance of pm2, dotenv
+      ansible.builtin.shell:
+        cmd: npm list -g
+      register: npm_global_installs_details
+
     - name: Installing global node dependancies
       ansible.builtin.shell:
         cmd: npm install -g dotenv-cli pm2
-
-    - name: Checking npm global install directory
-      ansible.builtin.shell:
-        cmd: npm list -g
+      when: "('dotenv-cli' or 'pm2') not in npm_global_installs_details.stdout"
 
     - name: Running migration for sample application
       ansible.builtin.shell:
@@ -104,9 +106,17 @@
         src: "{{ assets_path }}/ecosystem-employee-record-book.config.js"
         dest: "{{ pm2_js_file_directory }}"
 
+    - name: Check pm2 job list
+      ansible.builtin.shell:
+        cmd: |
+          export PATH="$PATH:/usr/local/bin"
+          pm2 list
+      register: pm2_job_list_details
+
     - name: Install log rotate lib for pm2
       ansible.builtin.shell:
         cmd: export PATH="$PATH:/usr/local/bin" && pm2 install pm2-logrotate
+      when: "'pm2-logrotate' not in pm2_job_list_details.stdout"
 
     - name: Setting up log rotate feature properties for pm2
       ansible.builtin.shell:
@@ -115,6 +125,7 @@
           pm2 set pm2-logrotate:max_size 10M
           pm2 set pm2-logrotate:retain 30
           pm2 set pm2-logrotate:compress true
+      when: "'pm2-logrotate' not in pm2_job_list_details.stdout"
 
     - name: Create the log folder structure
       ansible.builtin.file:
