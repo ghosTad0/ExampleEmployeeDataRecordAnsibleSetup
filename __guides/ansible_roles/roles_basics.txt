@@ -1,0 +1,53 @@
+what is ansible roles
+``````````````````````
+    - A collection of playbooks
+    - A way to group multiple tasks together, to one container
+    - Can be reused ezly
+
+How to create ansible roles
+```````````````````````````
+    ansible-galaxy init /path/to/create/roles --offline
+    
+    - now dir will be created
+    - each subdir should have main.yml file
+        - defaults/, vars/
+            both dirs are used to define ansible variables. But var has the priority. Means variables in defaults will be
+            overriden in variables defined in vars
+        - files/
+            files which gonna be transfered to remote
+        - meta/
+            supported platforms, version differences etc (additional data about role)
+        - tasks/
+            all tasks of the role
+
+Converting an existing playbook to a role
+``````````````````````````````````````````
+
+/role1/tasks/
+    main.yml
+        import_tasks: tasks1.yml
+        import_tasks: tasks2.yml
+        import_tasks: tasks3.yml  #these include different tasks that can be grouped together
+    
+    tasks1.yml
+        - name: Install httpd
+          yum:
+            name:
+                - httpd
+            state: latest
+
+    tasks2.yml
+        - name: Copy configs
+          copy:
+            xxx
+            xxx
+
+main role file
+    runsetup.yml
+    -------------
+        hosts: node2
+        roles:
+            - role1
+
+syntax check
+    ansible-playbook runsetup.yml --syntax-check
