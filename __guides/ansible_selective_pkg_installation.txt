@@ -1,0 +1,134 @@
+I want to perform an npm installation task on server. I am using ansible.builtin.shell to use npm install command and  i am installing global packages. I can list the global packages using npm list -g. Before installing global packages i can list them. Lets say I have pkg1, pkg2, pkg3 to be installed and pkg2 is already installed when checking the list. How to install the uninstalled items?
+
+
+ChatGPT
+
+To handle the installation of only the packages that are not already installed globally with npm using Ansible, you can follow a systematic approach. This involves listing the current global packages, comparing them with the desired package list, and then installing only the missing ones.
+
+Here’s a detailed guide on how to achieve this using Ansible:
+Step-by-Step Solution
+1. Define Your List of Packages
+
+First, define a list of the packages you want to install globally.
+
+yaml
+
+vars:
+  npm_packages:
+    - pkg1
+    - pkg2
+    - pkg3
+
+2. Get a List of Currently Installed Packages
+
+Use the npm list -g command to list currently installed global packages and store the output.
+
+yaml
+
+- name: Get a list of globally installed npm packages
+  ansible.builtin.shell: npm list -g --depth=0 --json
+  register: npm_global_list
+
+    --depth=0 ensures only top-level packages are listed.
+    --json outputs the list in JSON format, which is easier to parse.
+
+3. Parse the JSON Output
+
+Parse the JSON output to extract the names of the currently installed packages.
+
+yaml
+
+- name: Parse the list of globally installed npm packages
+  set_fact:
+    installed_packages: "{{ (npm_global_list.stdout | from_json).dependencies.keys() | list }}"
+
+4. Filter Out the Packages That Need to be Installed
+
+Filter the list of desired packages to include only those that are not already installed.
+
+yaml
+
+- name: Determine which npm packages need to be installed
+  set_fact:
+    packages_to_install: "{{ npm_packages | difference(installed_packages) }}"
+
+5. Install the Packages
+
+Use the ansible.builtin.command module to install only the packages that are not yet installed.
+
+yaml
+
+- name: Install missing npm packages globally
+  ansible.builtin.command:
+    cmd: npm install -g "{{ item }}"
+  loop: "{{ packages_to_install }}"
+
+Complete Example Playbook
+
+Here is a complete playbook that incorporates all the steps above:
+
+yaml
+
+---
+- name: Ensure specific global npm packages are installed
+  hosts: your_server
+  become: yes
+  vars:
+    npm_packages:
+      - pkg1
+      - pkg2
+      - pkg3
+
+  tasks:
+    - name: Get a list of globally installed npm packages
+      ansible.builtin.shell: npm list -g --depth=0 --json
+      register: npm_global_list
+
+    - name: Parse the list of globally installed npm packages
+      set_fact:
+        installed_packages: "{{ (npm_global_list.stdout | from_json).dependencies.keys() | list }}"
+
+    - name: Determine which npm packages need to be installed
+      set_fact:
+        packages_to_install: "{{ npm_packages | difference(installed_packages) }}"
+
+    - name: Install missing npm packages globally
+      ansible.builtin.command:
+        cmd: npm install -g "{{ item }}"
+      loop: "{{ packages_to_install }}"
+
+Explanation
+
+    npm list -g --depth=0 --json: Lists global packages in JSON format.
+    from_json: Converts the JSON output into a data structure.
+    difference: Finds the difference between the desired packages and the installed ones.
+    npm install -g "{{ item }}": Installs the packages that are missing.
+
+Additional Tips
+
+    Error Handling: You might want to add error handling for scenarios where npm commands fail or return errors.
+    Update Existing Packages: If you also need to update existing packages, you can add a task to npm update -g before checking for missing packages.
+
+Alternative Using npm Module
+
+For more advanced use cases, you might consider using the community.general.npm module which provides higher-level npm functionality but may not yet support global package management directly. Here’s an example for local installations:
+
+yaml
+
+- name: Install npm packages globally
+  community.general.npm:
+    name: "{{ item }}"
+    global: yes
+    state: present
+  loop: "{{ npm_packages }}"
+
+Make sure to install the community.general collection if you choose to use this approach.
+Summary Table
+Step	Task	Ansible Module/Command
+1. Define Packages	List of packages to install	vars
+2. List Installed Packages	Get list of global npm packages	ansible.builtin.shell
+3. Parse the JSON Output	Extract package names from JSON	set_fact
+4. Filter Packages to Install	Find packages to be installed	set_fact
+5. Install Missing Packages	Install only the packages that are not installed	ansible.builtin.command
+
+By following these steps, you can ensure that only the missing global npm packages are installed, avoiding redundant installations and keeping your environment clean
