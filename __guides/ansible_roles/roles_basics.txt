@@ -20,6 +20,7 @@ How to create ansible roles
         - tasks/
             all tasks of the role
 
+
 Converting an existing playbook to a role
 ``````````````````````````````````````````
 
