@@ -70,6 +70,8 @@
         cmd:  npm install
         chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
 
+    # these below 2 tasks hav to be modified.
+
     - name: Checking npm global install directory, for checking existance of pm2, dotenv
       ansible.builtin.shell:
         cmd: npm list -g
