@@ -62,7 +62,7 @@
 
     - name: Creating local env file needed for the dev mode run
       copy:
-        src: "{{ assets_path }}/.env.local"
+        src: "../assets/.env.local"
         dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
 
     - name: Installing node dependancies for the sample application
@@ -103,7 +103,7 @@
 
     - name: Copy pm2 ecosystem for running app
       copy:
-        src: "{{ assets_path }}/ecosystem-employee-record-book.config.js"
+        src: "../assets/ecosystem-employee-record-book.config.js"
         dest: "{{ pm2_js_file_directory }}"
 
     - name: Check pm2 job list

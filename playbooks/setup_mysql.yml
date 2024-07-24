@@ -21,7 +21,7 @@
         
     - name: Copy docker compose file
       copy:
-        src: "{{ assets_path }}/mysql_docker_compose.yml"
+        src: "../assets/mysql_docker_compose.yml"
         dest: "{{ docker_compose_file_directory }}/mysql_docker_compose.yml"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
