@@ -6,10 +6,17 @@
     - ../vars/common_vars.yml
   become: yes
   tasks:
-    - name: Check the user
+    - name: Check docker mysql service
       become: no
       ansible.builtin.shell:
-         cmd: whoami
+         cmd: docker ps | grep "mysql_docker"
+      register: check_docker_mysql_service_details
+      ignore_errors: yes
+
+    - name: Check docker mysql service prompt
+      debug:
+        msg: "mysql service is not up."
+      when: check_docker_mysql_service_details.failed
 
     - name: Down the mysql container
       become: no
@@ -21,5 +28,6 @@
       #   ansible_shell_type: bash   #This does not work becz of a known bug. instead of /bin/bash, ansible connects with /bin/sh, this does not support for some commands.
       ansible.builtin.shell:
         cmd: docker compose -f {{ docker_compose_file_directory }}/mysql_docker_compose.yml down
+      when: not check_docker_mysql_service_details.failed
 
     #- name: Remove entire dir structure related to mysql (do i wanna do it?)

@@ -8,48 +8,58 @@
   become: yes
   tasks:
 
-    - name: Checking user of appservers  #This is for neglecting first time connect issue for appservers in ansible.
+    - name: Checking docker setup of mysql
       ansible.builtin.shell:
-        cmd: whoami
+        cmd: docker ps
       ignore_errors: yes
+      register: mysql_docker_installation_details
 
-    - name: Check the mysql_docker container is running or not
-      ansible.builtin.shell:
-        cmd:  docker ps
-      register: mysql_docker_status
+    - name: mysql container not found scenario, task execution
+      block:
+        - name: setting up mysql and required dbs, task execution
+          block:
+            - name: Starting mysql_docker container (if not already running)
+              become: no  # it's a bash alias for the cloud-user profile. it wont be there for "root"
+              ansible.builtin.shell:
+                cmd: docker compose -f {{ docker_compose_file_directory }}/mysql_docker_compose.yml up -d
 
-    # - name: Check the user after become no
-    #   become: no  # it's a bash alias for the cloud-user profile. it wont be there for "root"
-    #   ansible.builtin.shell:
-    #     cmd:  whoami   # yeah this become: no works
+            - pause:
+                seconds: 15
 
-    - name: Starting mysql_docker container (if not already running)
-      become: no  # it's a bash alias for the cloud-user profile. it wont be there for "root"
-      ansible.builtin.shell:
-        cmd: docker compose -f {{ docker_compose_file_directory }}/mysql_docker_compose.yml up -d
-      when: "not 'mysql_docker' in mysql_docker_status.stdout"
+            - name: Check the existance of sample app database
+              ansible.builtin.shell:
+                cmd: docker exec -it mysql_docker mysql -u user -ppassword -e "show databases"
+              register: mysql_db_list
 
-    - pause:
-        seconds: 15
+            - name: Create the db required for sample app only when it's not there
+              ansible.builtin.shell:
+                cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_app_db;"
+              register: create_db_init_attempt_status
+              when: not 'employee_app_db' in mysql_db_list.stdout
+              ignore_errors: yes
 
-    - name: Check the existance of sample app database
-      ansible.builtin.shell:
-        cmd: docker exec -it mysql_docker mysql -u user -ppassword -e "show databases"
-      register: mysql_db_list
+            - name: Granting db create previleges (if not)
+              ansible.builtin.shell:
+                cmd: docker exec -it mysql_docker mysql -u root -proot -e "GRANT ALL PRIVILEGES ON *.* TO 'user'@'%';"
+              when: create_db_init_attempt_status.failed | default(False)
 
-    - name: Create the db required for sample app only when it's not there
-      ansible.builtin.shell:
-        cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_app_db;"
-      register: create_db_init_attempt_status
-      when: not 'employee_app_db' in mysql_db_list.stdout
-      ignore_errors: yes
+            - name: Create the db required for sample app retry
+              ansible.builtin.shell:
+                cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_app_db;"
+              when: create_db_init_attempt_status.failed | default(False)
+          when: "'mysql_docker' not in mysql_docker_installation_details.stdout"
+      when: not mysql_docker_installation_details.failed
 
-    - name: Granting db create previleges (if not)
-      ansible.builtin.shell:
-        cmd: docker exec -it mysql_docker mysql -u root -proot -e "GRANT ALL PRIVILEGES ON *.* TO 'user'@'%';"
-      when: create_db_init_attempt_status.failed | default(False)
+    - name: mysql container already running scenario, task execution
+      block:
+        - name: mysql docker container found prompt
+          debug:
+            msg: mysql is already running on docker!
+          when: "'mysql_docker' in mysql_docker_installation_details.stdout"
+      when: not mysql_docker_installation_details.failed
 
-    - name: Create the db required for sample app retry
-      ansible.builtin.shell:
-        cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_app_db;"
-      when: create_db_init_attempt_status.failed | default(False)
+    - name: mysql container details get status detail log
+      debug:
+        msg: Listing docker containers failed. Something wrong with docker installation
+      when: mysql_docker_installation_details.failed
+        

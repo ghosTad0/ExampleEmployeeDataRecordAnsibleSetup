@@ -7,33 +7,47 @@
     - name: Gather facts
       setup:
 
-    - name: Step1 - Setup docker's app repository
+    - name: Checking docker installation
       ansible.builtin.shell:
-        cmd: |
-          apt update -y
-          apt install ca-certificates curl -y
-          install -m 0755 -d /etc/apt/keyrings
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-          chmod a+r /etc/apt/keyrings/docker.asc
-          echo \
-            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          apt update -y
+        cmd: docker ps
+      ignore_errors: yes
+      register: docker_installation_details
 
-    - name: Step2 - Install docker components
-      apt:
-        name:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
-          - docker-compose-plugin
-        state: latest
+    - name: Docker installation not found task execution scenario, tasks list
+      block:
+        - name: Step1 - Setup docker's app repository
+          ansible.builtin.shell:
+            cmd: |
+              apt update -y
+              apt install ca-certificates curl -y
+              install -m 0755 -d /etc/apt/keyrings
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+              chmod a+r /etc/apt/keyrings/docker.asc
+              echo \
+                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+                $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+                sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+              apt update -y
 
-    - name: Step3 - Postinstall steps
-      become: no
-      ansible.builtin.shell:
-        cmd: |
-          sudo groupadd docker
-          sudo usermod -aG docker $USER
+        - name: Step2 - Install docker components
+          apt:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+              - docker-buildx-plugin
+              - docker-compose-plugin
+            state: latest
+
+        - name: Step3 - Postinstall steps
+          become: no
+          ansible.builtin.shell:
+            cmd: |
+              sudo groupadd docker
+              sudo usermod -aG docker $USER
+      when: docker_installation_details.failed
+
+    - name: Docker installation found prompt
+      debug:
+        msg: "Docker already found on server"
+      when: not docker_installation_details.failed

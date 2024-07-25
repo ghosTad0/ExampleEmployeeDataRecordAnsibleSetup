@@ -5,15 +5,35 @@
   tasks:
     - name: Gather facts
       setup:
-    - name: stop nginx
-      service:
-        name: nginx
-        state: stopped
 
-    - name: uninstall nginx using yum
+    - name: Checking nginx service
       shell:
-        cmd: |
-          yum remove nginx -y &&
-          # yum purge nginx -y &&
-          yum autoremove -y
+        cmd: systemctl status nginx
+      register: checking_nginx_service_details
       ignore_errors: yes
+
+    - name: nginx service exists scenario, tasks execution
+      block:
+        - name: stop nginx
+          service:
+            name: nginx
+            state: stopped
+
+        - name: uninstall nginx using yum
+          shell:
+            cmd: |
+              yum remove nginx -y &&
+              # yum purge nginx -y &&
+              yum autoremove -y
+          ignore_errors: yes
+
+        - name: Remove folder structure
+          ansible.builtin.file:
+            path: /etc/nginx
+            state: absent
+      when: not checking_nginx_service_details.failed
+
+    - name: nginx service status prompt
+      debug:
+        msg: "Nginx is not installed in the server!"
+      when: checking_nginx_service_details.failed

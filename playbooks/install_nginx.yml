@@ -6,11 +6,50 @@
   tasks:
     - name: Gather facts
       setup:
-    - name: install nginx
-      yum:
-        name: nginx
-        state: latest
-    - name: start nginx
-      service:
-        name: nginx
-        state: started
+
+    - name: Checking nginx service
+      shell:
+        cmd: systemctl status nginx
+      register: checking_nginx_service_details
+      ignore_errors: yes
+
+    - name: Not found nginx scenario, tasks execution
+      block:
+        - name: install nginx
+          yum:
+            name: nginx
+            state: latest
+        - name: start nginx
+          service:
+            name: nginx
+            state: started
+          register: nginx_installation_details
+      when: checking_nginx_service_details.failed
+
+    - name: Checking nginx service status prompt
+      debug:
+        msg: "Nginx is already installed in the system"
+      when: not checking_nginx_service_details.failed
+
+    - name: Post installation steps tasks execution
+      block:
+        - name: Copy nginx config to /etc/nginx/conf.d
+          ansible.builtin.copy:
+            src: "../assets/employee_app_nginx.conf"
+            dest: /etc/nginx/conf.d
+
+        - name: Restart the nginx service
+          service:
+            name: nginx
+            state: restarted
+
+        - name: Allow the firewall the 8080 port
+          ansible.builtin.shell:
+            cmd: firewall-cmd --add-port=8080/tcp --permanent
+
+        - name: Disable the SELinux for the server (stackoverflow suggestion https://stackoverflow.com/questions/23948527/13-permission-denied-while-connecting-to-upstreamnginx)
+          ansible.builtin.shell:
+            cmd: setsebool -P httpd_can_network_connect 1
+
+      when: not nginx_installation_details.failed | default(True)
+    
