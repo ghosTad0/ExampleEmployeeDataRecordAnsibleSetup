@@ -38,7 +38,7 @@
 
     - name: Copy mysql config file to the configs directory
       copy:
-        src: "{{ assets_path }}/{{ mysql_config_file_name }}"
+        src: "../assets/{{ mysql_config_file_name }}"
         dest: "{{ mysql_volume_mounts_dir }}/{{ mysql_config_directory_name }}/{{ mysql_config_file_name }}"
 
     - name: Changing the mount directory tree ownership
