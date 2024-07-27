@@ -32,7 +32,7 @@
         path: "{{ sample_app_src_dir }}"
         state: directory
         mode: '0755' # Optional: Set permissions
-      when: not app_source_location_details.stat.isdir
+      when: not app_source_location_details.stat.isdir  # this is not required. only if the folder is not present it will do it's work
 
     # - name: Check sample app git repo existance
     #   ansible.builtin.stat:
