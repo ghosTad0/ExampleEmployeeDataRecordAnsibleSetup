@@ -14,6 +14,21 @@
       ignore_errors: yes
       register: mysql_docker_installation_details
 
+    - name: Check the existance of sample app database
+      ansible.builtin.shell:
+        cmd: docker exec -it mysql_docker mysql -u user -ppassword -e "show databases"
+      register: mysql_db_list
+      when: not mysql_docker_installation_details.failed
+      ignore_errors: yes
+
+    - name: Checking the previledges owned by mysql user
+      ansible.builtin.shell:
+        cmd: docker exec -it mysql_docker mysql -u user -ppassword -e "show GRANTS;"
+        # cmd: docker exec -it mysql_docker mysql -u user -ppassword -e "SELECT PRIVILEGE_TYPE FROM information_schema.USER_PRIVILEGES WHERE GRANTEE = '\'user\'@\'%\'';"
+      register: previlege_details
+      when: not mysql_docker_installation_details.failed
+      ignore_errors: yes
+
     - name: mysql container not found scenario, task execution
       block:
         - name: setting up mysql and required dbs, task execution
@@ -26,29 +41,26 @@
             - pause:
                 seconds: 15
 
-            - name: Check the existance of sample app database
-              ansible.builtin.shell:
-                cmd: docker exec -it mysql_docker mysql -u user -ppassword -e "show databases"
-              register: mysql_db_list
-
             - name: Create the db required for sample app only when it's not there
               ansible.builtin.shell:
                 cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_app_db;"
               register: create_db_init_attempt_status
-              when: not 'employee_app_db' in mysql_db_list.stdout
               ignore_errors: yes
 
             - name: Granting db create previleges (if not)
               ansible.builtin.shell:
                 cmd: docker exec -it mysql_docker mysql -u root -proot -e "GRANT ALL PRIVILEGES ON *.* TO 'user'@'%';"
-              when: create_db_init_attempt_status.failed | default(False)
+              when: (create_db_init_attempt_status.failed | default(False)) and (not 'CREATE,' in previlege_details.stdout | default(True))  #and part is not so required if carefully looked into
+              ignore_errors: yes
 
             - name: Create the db required for sample app retry
               ansible.builtin.shell:
                 cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_app_db;"
               when: create_db_init_attempt_status.failed | default(False)
-          when: "'mysql_docker' not in mysql_docker_installation_details.stdout"
-      when: not mysql_docker_installation_details.failed
+              ignore_errors: yes
+          # when: "'mysql_docker' not in mysql_docker_installation_details.stdout"
+          # when: not 'CREATE,' in previlege_details.stdout | default(True)
+      when: not 'employee_app_db' in mysql_db_list.stdout | default(True)
 
     - name: mysql container already running scenario, task execution
       block:

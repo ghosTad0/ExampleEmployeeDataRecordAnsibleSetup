@@ -1,0 +1,27 @@
+ERROR! We were unable to read either as JSON nor YAML, these are the errors we got from each:
+JSON: Expecting value: line 1 column 1 (char 0)
+
+Syntax Error while loading YAML.
+  did not find expected key
+
+The error appears to be in '/home/tuan/MyDir/office_work/AAP/__sampleApps/__ansible_deployments_for_apps/employee_recorder_ansible_deployment/playbooks/sample_app_deploy_appservers.yml': line 60, column 27, but may
+be elsewhere in the file depending on the exact syntax problem.
+
+The offending line appears to be:
+
+          # when: "'mysql_docker' not in mysql_docker_installation_details.stdout"
+          when: 'CREATE,' not in previlege_details.stdout | default(True)
+                          ^ here
+This one looks easy to fix. It seems that there is a value started
+with a quote, and the YAML parser is expecting to see the line ended
+with the same kind of quote. For instance:
+
+    when: "ok" in result.stdout
+
+Could be written as:
+
+   when: '"ok" in result.stdout'
+
+Or equivalently:
+
+   when: "'ok' in result.stdout"

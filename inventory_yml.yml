@@ -8,7 +8,7 @@ webservers:
 appservers:
   hosts:
     aap_appserver1:
-      ansible_host: 172.27.5.98
+      ansible_host: 172.27.5.176
       ansible_user: ubuntu
       ansible_ssh_private_key_file: /home/tuan/Desktop/server_creds_access_keys/aap_keys/aap-demo
 
