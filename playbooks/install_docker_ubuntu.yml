@@ -45,6 +45,19 @@
             cmd: |
               sudo groupadd docker
               sudo usermod -aG docker $USER
+        
+        - name: Step4 - Checking docker ps functionality without sudo
+          become: no
+          ansible.builtin.shell:
+            cmd: docker ps
+          register: check_docker_without_sudo_details
+          ignore_errors: yes
+
+        - name: Step5 - Stackoverflow suggestions (https://stackoverflow.com/questions/48568172/docker-sock-permission-denied)
+          become: no
+          ansible.builtin.shell:
+            cmd: newgrp docker
+          when: check_docker_without_sudo_details.failed
       when: docker_installation_details.failed
 
     - name: Docker installation found prompt
