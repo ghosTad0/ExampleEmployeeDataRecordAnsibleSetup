@@ -10,7 +10,7 @@
       ansible.builtin.file:
         path: "{{ item }}"
         state: absent
-        loop: 
-          - /var/lib/docker
-          - /var/lib/containerd
+      loop: 
+        - /var/lib/docker
+        - /var/lib/containerd
 
