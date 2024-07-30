@@ -1,0 +1,73 @@
+---
+- name: Playbook for installing nginx older version, updating nginx to latest and updating os pkgs
+  hosts: all
+  become: yes
+  gather_facts: yes
+  tasks:
+    - name: Checking the OS type
+      debug:
+        msg: "{{ ansible_facts['os_family'] }}"
+
+    - name: Nginx installation status
+      ansible.builtin.shell:
+        cmd: systemctl status nginx
+      register: nginx_status_details
+      ignore_errors: yes
+
+    # No error, uninstall nginx
+    - name: Nginx Uninstallation if found and os release matches to RedHat
+      shell:
+        cmd: |
+          yum remove nginx -y &&
+          # yum purge nginx -y &&
+          yum autoremove -y
+      ignore_errors: yes
+      when: (nginx_status_details is succeeded) and (ansible_facts['os_family'] == "RedHat")
+
+    - name: Nginx Uninstallation if found and os release matches to Debian
+      shell:
+        cmd: |
+          apt remove nginx -y &&
+          apt purge nginx -y &&
+          apt autoremove -y
+      ignore_errors: yes
+      when: (nginx_status_details is succeeded) and (ansible_facts['os_family'] == "Debian")
+
+    - name: Remove folder structure used by nginx
+      ansible.builtin.file:
+        path: /etc/nginx
+        state: absent
+
+    # Now properly install nginx version
+    - name: install nginx (if Debian)
+      apt:
+        name: nginx
+        state: latest
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: install nginx (if RedHat)
+      yum:
+        name: nginx
+        state: latest
+      when: ansible_facts['os_family'] == "RedHat"
+
+    # OS update
+    - name: update rhel
+      shell: yum update -y
+      register: update_rhel_details
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: update debian(ubuntu)
+      shell: apt update -y
+      register: update_debian_details
+      when: ansible_facts['os_family'] == "Debian"
+
+    # Display os update details
+    - name: Display Update results
+      vars:
+        stdout_task1: "{{ update_rhel_details.stdout if update_rhel_details is defined and update_rhel_details.stdout is defined else 'update_rhel not executed or stdout not available' }}"
+        stdout_task2: "{{ update_debian_details.stdout if update_debian_details is defined and update_debian_details.stdout is defined else 'update_debian not executed or stdout not available' }}"
+      debug:
+        msg:
+          - "{{ stdout_task1 }}"
+          - "{{ stdout_task2 }}"
