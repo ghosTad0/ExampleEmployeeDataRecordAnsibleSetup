@@ -1,0 +1,49 @@
+---
+- name: Playbook for removing nginx from rhel and ubuntu
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Check nginx service status
+      shell: systemctl status nginx
+      ignore_errors: yes
+      register: nginx_status_details
+
+    # - name: Checking the variable1
+    #   debug:
+    #     var: "(nginx_status_details is succeeded) or ('Active: inactive (dead)' in nginx_status_details.stdout)"
+
+    - name: nginx service fould flow
+      block:
+        - name: Stop service if it's there
+          shell: systemctl stop nginx
+
+        # - name: Uninstall nginx if there (for ubuntu)  DONT EVER USE STATE: ABSENT WHEN SERVICES R INVOLVED WITH PKGS
+        #   apt:
+        #     name: 
+        #       - nginx
+        #       - nginx-common
+        #     state: absent
+        #   when: ansible_facts['os_family'] == 'Debian'
+        - name: Uninstall nginx if there (for ubuntu)
+          ansible.builtin.shell:
+            cmd: |
+              apt remove nginx nginx-common -y
+              apt purge nginx nginx-common -y
+          when: ansible_facts['os_family'] == 'Debian'
+
+        # - name: Pause before clearing dir structure
+        #   pause:
+        #     seconds: 15
+
+        - name: Uninstall nginx if there (for rhel)
+          shell:
+            cmd: |
+              yum remove nginx -y
+          when: ansible_facts['os_family'] == 'RedHat'
+
+        - name: Remove folder structure
+          ansible.builtin.file:
+            path: /etc/nginx
+            state: absent
+      when: "(nginx_status_details is succeeded) or ('Active: inactive (dead)' in nginx_status_details.stdout) or ('Active: failed' in nginx_status_details.stdout)"

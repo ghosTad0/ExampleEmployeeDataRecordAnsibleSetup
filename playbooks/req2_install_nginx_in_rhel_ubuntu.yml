@@ -31,12 +31,12 @@
       shell: systemctl start nginx
       when: ansible_facts['os_family'] == "RedHat"
 
-    # Display os update details
-    - name: Display Update results
-      vars:
-        stdout_task1: "{{ update_rhel_details.stdout if update_rhel_details is defined and update_rhel_details.stdout is defined else 'update_rhel not executed or stdout not available' }}"
-        stdout_task2: "{{ update_debian_details.stdout if update_debian_details is defined and update_debian_details.stdout is defined else 'update_debian not executed or stdout not available' }}"
-      debug:
-        msg:
-          - "{{ stdout_task1 }}"
-          - "{{ stdout_task2 }}"
+    # # Display os update details
+    # - name: Display Update results
+    #   vars:
+    #     stdout_task1: "{{ update_rhel_details.stdout if update_rhel_details is defined and update_rhel_details.stdout is defined else 'update_rhel not executed or stdout not available' }}"
+    #     stdout_task2: "{{ update_debian_details.stdout if update_debian_details is defined and update_debian_details.stdout is defined else 'update_debian not executed or stdout not available' }}"
+    #   debug:
+    #     msg:
+    #       - "{{ stdout_task1 }}"
+    #       - "{{ stdout_task2 }}"
