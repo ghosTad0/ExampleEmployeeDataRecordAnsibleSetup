@@ -27,6 +27,10 @@
         state: latest
       when: ansible_facts['os_family'] == "RedHat"
 
+    - name: Start nginx service (if RedHat)
+      shell: systemctl start nginx
+      when: ansible_facts['os_family'] == "RedHat"
+
     # Display os update details
     - name: Display Update results
       vars:
