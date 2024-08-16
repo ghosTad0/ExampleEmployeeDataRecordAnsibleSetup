@@ -4,14 +4,17 @@
   become: yes
   gather_facts: yes  # Include gathering facts
   tasks:
-    - name: Gather facts
-      setup:
-
-    - name: Checking nginx service
+    - name: checking availability of port 8080 (if available, nginx confs are applied)
       shell:
-        cmd: systemctl status nginx
-      register: checking_nginx_service_details
+        cmd: curl -k localhost:8080
+      register: port8080check_details
       ignore_errors: yes
+
+    # - name: Checking nginx service
+    #   shell:
+    #     cmd: systemctl status nginx
+    #   register: checking_nginx_service_details
+    #   ignore_errors: yes
 
     - name: Not found nginx scenario, tasks execution
       block:
@@ -26,12 +29,12 @@
             name: nginx
             state: started
           register: nginx_installation_details
-      when: checking_nginx_service_details.failed
+      when: port8080check_details is failed
 
     - name: Checking nginx service status prompt
       debug:
-        msg: "Nginx is already installed in the system"
-      when: not checking_nginx_service_details.failed
+        msg: "Nginx is already set-up in the system"
+      when: port8080check_details is succeeded
 
     - name: Post installation steps tasks execution
       block:
@@ -53,5 +56,5 @@
           ansible.builtin.shell:
             cmd: setsebool -P httpd_can_network_connect 1
 
-      when: not nginx_installation_details.failed | default(True)
+      when: not (nginx_installation_details.failed | default(True)) and (port8080check_details is failed)
     
