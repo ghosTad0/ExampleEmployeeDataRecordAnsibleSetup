@@ -18,7 +18,7 @@
 
     - name: reading the yaml file from server
       ansible.builtin.slurp:
-        src: "{{ sample_app_src_dir }}/employee_data_record/static_srcs/employee_app_fe_conf.yml"
+        src: "{{ sample_app_config_dir }}/employee_data_record/static_srcs/employee_app_fe_conf.yml"
       register: remote_config_file
       ignore_errors: yes
 
@@ -59,4 +59,4 @@
     - name: fill the template
       template:
         src: ../templates/employee_app_fe_conf.yml.j2
-        dest: "{{ sample_app_src_dir }}/employee_data_record/static_srcs/employee_app_fe_conf.yml"
+        dest: "{{ sample_app_config_dir }}/employee_data_record/static_srcs/employee_app_fe_conf.yml"
