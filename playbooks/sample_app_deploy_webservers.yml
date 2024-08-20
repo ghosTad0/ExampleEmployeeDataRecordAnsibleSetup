@@ -42,7 +42,7 @@
 
     - name: Copying sample app configs to webapp_data directory
       copy:
-        src: ../assets/employee_app_fe_conf.yml
+        src: "../assets/employee_app_fe_conf.yml"
         dest: "{{ sample_app_src_dir }}/employee_data_record/static_srcs"
       ignore_errors: yes
 
