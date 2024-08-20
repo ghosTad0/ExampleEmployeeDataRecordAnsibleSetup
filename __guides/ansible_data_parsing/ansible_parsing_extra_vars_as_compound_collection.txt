@@ -1,0 +1,155 @@
+1. Pass Nested Variables
+
+When passing nested variables via the command line, you can use the YAML syntax. Here’s an example of how to do this:
+
+sh
+
+ansible-playbook playbook.yml -e '{"nested_var": {"key1": "value1", "key2": "value2"}}'
+
+Or, if you prefer using a file for readability, you can use @ to specify a YAML file:
+
+sh
+
+ansible-playbook playbook.yml -e "@vars.yml"
+
+Where vars.yml contains:
+
+yaml
+
+nested_var:
+  key1: "value1"
+  key2: "value2"
+
+2. Access Nested Variables in Your Playbook
+
+You can then access these nested variables in your playbook. Here’s an example of how to use them:
+Example Playbook (playbook.yml)
+
+yaml
+
+---
+- name: Example Playbook with Nested Variables
+  hosts: localhost
+  tasks:
+    - name: Show nested variables
+      debug:
+        msg: |
+          Key1: {{ nested_var.key1 }}
+          Key2: {{ nested_var.key2 }}
+
+3. Save Nested Variables as New Variables
+
+If you want to save nested variables into another variable for convenience or manipulation, you can do so in your playbook:
+Example Playbook with Saved Nested Variables
+
+yaml
+
+---
+- name: Example Playbook with Saved Nested Variables
+  hosts: localhost
+  vars:
+    # Save the nested extra variables into a new variable
+    saved_nested_vars: "{{ nested_var | default({'key1': 'default_value1', 'key2': 'default_value2'}) }}"
+
+  tasks:
+    - name: Show the saved nested variables
+      debug:
+        msg: |
+          Saved Key1: {{ saved_nested_vars.key1 }}
+          Saved Key2: {{ saved_nested_vars.key2 }}
+
+Summary
+
+    Use JSON format for nested variables with the -e option or specify a file with @ for better readability.
+    Access the nested variables directly or save them into a new variable within your playbook as needed.
+
+By using these methods, you can effectively manage and utilize nested variables in your Ansible playbooks.
+
+
+
+
+
+
+
+You said:
+{"nested_var": {"key1": "value1", "key2": "value2"}}
+
+what if i want to pass this as yml_conf={"nested_var": {"key1": "value1", "key2": "value2"}} and then parse that string as a dict? can I do that?
+ChatGPT said:
+ChatGPT
+
+
+
+
+
+
+Yes, you can pass a nested YAML structure as a string and then parse that string into a dictionary within your Ansible playbook. Here’s how you can do that:
+1. Pass the String as an Extra Variable
+
+You can pass your nested YAML structure as a string using the -e option. For example:
+
+sh
+
+ansible-playbook playbook.yml -e 'yml_conf={"nested_var": {"key1": "value1", "key2": "value2"}}'
+
+2. Parse the String into a Dictionary
+
+Within your playbook, you can use the from_yaml filter to convert the string into a dictionary. Here’s how you can achieve that:
+Example Playbook (playbook.yml)
+
+yaml
+
+---
+- name: Example Playbook to Parse YAML String
+  hosts: localhost
+  vars:
+    # Parse the yml_conf string into a dictionary
+    parsed_conf: "{{ yml_conf | from_yaml }}"
+
+  tasks:
+    - name: Show the parsed dictionary
+      debug:
+        msg: |
+          Key1: {{ parsed_conf.nested_var.key1 }}
+          Key2: {{ parsed_conf.nested_var.key2 }}
+
+Explanation
+
+    Pass the String: You pass the YAML-like string as an extra variable (yml_conf) when running the playbook.
+
+    Parse the String: Inside the playbook, use the from_yaml filter to parse the yml_conf string into a dictionary. The from_yaml filter converts the YAML-formatted string into a dictionary object.
+
+    Use the Dictionary: After parsing, you can access the nested values using the standard dictionary notation.
+
+Full Example
+Command to Run the Playbook
+
+sh
+
+ansible-playbook playbook.yml -e 'yml_conf={"nested_var": {"key1": "value1", "key2": "value2"}}'
+
+Playbook Content (playbook.yml)
+
+yaml
+
+---
+- name: Example Playbook to Parse YAML String
+  hosts: localhost
+  vars:
+    # Convert yml_conf string to dictionary
+    parsed_conf: "{{ yml_conf | from_yaml }}"
+
+  tasks:
+    - name: Show the parsed dictionary
+      debug:
+        msg: |
+          Key1: {{ parsed_conf.nested_var.key1 }}
+          Key2: {{ parsed_conf.nested_var.key2 }}
+
+Summary
+
+    Use the -e option to pass the YAML structure as a string.
+    Parse the string into a dictionary using the from_yaml filter within your playbook.
+    Access and manipulate the parsed dictionary as needed.
+
+This method allows you to handle and utilize complex data structures passed as strings effectively in your Ansible playbooks.
