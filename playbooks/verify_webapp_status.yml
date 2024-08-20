@@ -24,6 +24,7 @@
     - name: Checking web app status details
       set_fact:
         sample_app_state_data: '{{ sample_app_state_details.stdout | b64decode | from_json }}'
+      ignore_errors: yes  # FOR NOW KEEP THIS, IN 0.0.1-0.0.3 WE DONT HV THIS FEATURE. ENDPOINT I MEAN. SO JUST CHECK
 
     - name: Debugging
       debug:
