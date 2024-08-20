@@ -34,6 +34,18 @@
         mode: '0755' # Optional: Set permissions
       when: not (app_source_location_details.stat.isdir | default(False)) # this is not required. only if the folder is not present it will do it's work
 
+    - name: Create a location to save sample app configs
+      ansible.builtin.file:
+        path: "{{ sample_app_src_dir }}/employee_data_record/static_srcs"
+        state: directory
+        mode: '0755' # Optional: Set permissions
+
+    - name: Copying sample app configs to webapp_data directory
+      copy:
+        src: ../assets/employee_app_fe_conf.yml
+        dest: "{{ sample_app_src_dir }}/employee_data_record/static_srcs"
+      ignore_errors: yes
+
     # - name: Check sample app git repo existance
     #   ansible.builtin.stat:
     #     path: "{{ sample_app_src_dir }}/{{ sample_app_name }}"

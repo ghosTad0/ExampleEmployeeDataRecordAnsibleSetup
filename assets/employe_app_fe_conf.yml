@@ -1,0 +1,5 @@
+app_version: 1.0.0
+navbar_rem_size: 4
+other_configs:
+  conf1: val1
+  conf2: val2

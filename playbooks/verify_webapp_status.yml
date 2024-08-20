@@ -1,0 +1,30 @@
+---
+- name: Playbook for verifying webapp status
+  hosts: webservers
+  become: yes
+  gather_facts: yes
+  tasks:
+    - name: Installing curl (for redhat)
+      yum:
+        name: curl
+        state: latest
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Installing curl (for ubuntu)
+      apt:
+        name: curl
+        status: latest
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Check validate endpoint in employee data record app
+      shell:
+        cmd: curl -k localhost:3000/api/v0/verify-state
+      register: sample_app_state_details
+
+    - name: Checking web app status details
+      set_fact:
+        sample_app_state_data: '{{ sample_app_state_details.stdout | b64decode | from_json }}'
+
+    - name: Debugging
+      debug:
+        var: sample_app_state_data

@@ -1,4 +1,5 @@
 sample_app_src_dir: /hms/apps
+sample_app_config_dir: /hms/data/webapp_data
 sample_app_git_repo: https://github.com/ghosTad0/ExampleEmployeeDataRecord.git
 sample_app_name: ExampleEmployeeDataRecord
 sample_app_logs_directory: /hms/logs/employee_record_book_logs
