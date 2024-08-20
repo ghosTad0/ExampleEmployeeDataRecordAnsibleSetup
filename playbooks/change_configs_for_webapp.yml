@@ -35,7 +35,7 @@
       # this should be done to all the variables in config
       set_fact:
         init_var: 0
-        aap_version_1: "{{ new_vars['app_version'] | default(omit) }}"
+        app_version_1: "{{ new_vars['app_version'] | default(omit) }}"
         navbar_rem_size_1: "{{ new_vars['navbar_rem_size'] | default(omit) }}"
         other_configs_1: "{{ 
           {
