@@ -39,9 +39,12 @@
     - name: Post installation steps tasks execution
       block:
         - name: Copy nginx config to /etc/nginx/conf.d
-          ansible.builtin.copy:
-            src: "../assets/employee_app_nginx.conf"
-            dest: /etc/nginx/conf.d
+          # ansible.builtin.copy:
+          #   src: "../assets/employee_app_nginx.conf"
+          #   dest: /etc/nginx/conf.d
+          ansible.builtin.template:
+            src: "../templates/employee_app_nginx.conf.j2"
+            dest: /etc/nginx/conf.d/employee_app_nginx.conf
 
         - name: Restart the nginx service
           service:

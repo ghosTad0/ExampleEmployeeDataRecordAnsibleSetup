@@ -1,0 +1,62 @@
+---
+- name: Playbook for changing webapp configs
+  hosts: all
+  become: yes
+  gather_facts: yes
+  vars_files:
+  - ../vars/deploy_sample_app_vars.yml
+  - ../vars/common_vars.yml
+  tasks:
+    - name: get new config vals
+      include_vars:
+        file: ../vars/employee_app_config_vars.yml
+        name: new_vars
+
+    - name: print new vars
+      debug:
+        var: new_vars
+
+    - name: reading the yaml file from server
+      ansible.builtin.slurp:
+        src: "{{ sample_app_config_dir }}/employee_data_record/static_srcs/employee_app_fe_conf.yml"
+      register: remote_config_file
+      ignore_errors: yes
+
+    - name: turning remote config into dictionary
+      ansible.builtin.set_fact:
+        remote_yaml: '{{ remote_config_file.content | b64decode | from_yaml }}'
+      ignore_errors: yes
+
+    # - name: display values
+    #   debug:
+    #     var: remote_yaml['aa4']['ab1']
+
+    - name: define all variables clearly as required (if one is undefined find for the next one is what we want) -step1
+      # this should be done to all the variables in config
+      set_fact:
+        init_var: 0
+        app_version_1: "{{ new_vars[inventory_hostname]['app_version'] | default(omit) }}"
+        navbar_rem_size_1: "{{ new_vars['navbar_rem_size'] | default(omit) }}"
+        other_configs_1: "{{ 
+          {
+            'conf1': new_vars[inventory_hostname]['other_configs']['conf1'] | default(omit),
+            'conf2': new_vars['other_configs']['conf2'] | default(omit)
+          } 
+        }}"
+
+    - name: define all variables clearly as required (if one is undefined find for the next one is what we want) -step2
+      set_fact:
+        init_var: 0
+        app_version: "{{ app_version_1 | default(remote_yaml['app_version'] | default('xx1')) }}"
+        navbar_rem_size: "{{ navbar_rem_size_1 | default(remote_yaml['navbar_rem_size'] | default('xx3')) }}"
+        other_configs: "{{ 
+          {
+            'conf1': other_configs_1['conf1'] | default(remote_yaml['other_configs']['conf1'] | default('xx41')),
+            'conf2': other_configs_1['conf2'] | default(remote_yaml['other_configs']['conf2'] | default('xx43'))
+          } 
+        }}"
+
+    - name: fill the template
+      template:
+        src: ../templates/employee_app_fe_conf.yml.j2
+        dest: "{{ sample_app_config_dir }}/employee_data_record/static_srcs/employee_app_fe_conf.yml"

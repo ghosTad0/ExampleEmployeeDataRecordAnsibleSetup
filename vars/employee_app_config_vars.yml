@@ -1,0 +1,13 @@
+# common config parameters
+navbar_rem_size: 5
+
+# server specific config parameters
+aap_webserver1:
+  app_version: rh-2.0.0
+  other_configs:
+    conf1: rh_conf1
+
+aap_appserver1:
+  app_version: u-2.0.0
+  other_configs:
+    conf1: u_conf1

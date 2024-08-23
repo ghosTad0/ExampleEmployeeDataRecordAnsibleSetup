@@ -1,0 +1,8 @@
+server {
+  listen 8080;
+  server_name {{ hostvars[inventory_hostname].ansible_host }};
+
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+  }
+}
