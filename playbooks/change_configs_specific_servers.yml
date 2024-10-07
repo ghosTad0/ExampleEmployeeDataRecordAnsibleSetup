@@ -35,7 +35,7 @@
       # this should be done to all the variables in config
       set_fact:
         init_var: 0
-        app_version_1: "{{ new_vars[inventory_hostname]['app_version'] | default(omit) }}"
+        config_demo_value_1: "{{ new_vars[inventory_hostname]['config_demo_value'] | default(omit) }}"
         navbar_rem_size_1: "{{ new_vars['navbar_rem_size'] | default(omit) }}"
         other_configs_1: "{{ 
           {
@@ -47,7 +47,7 @@
     - name: define all variables clearly as required (if one is undefined find for the next one is what we want) -step2
       set_fact:
         init_var: 0
-        app_version: "{{ app_version_1 | default(remote_yaml['app_version'] | default('xx1')) }}"
+        config_demo_value: "{{ config_demo_value_1 | default(remote_yaml['config_demo_value'] | default('xx1')) }}"
         navbar_rem_size: "{{ navbar_rem_size_1 | default(remote_yaml['navbar_rem_size'] | default('xx3')) }}"
         other_configs: "{{ 
           {
