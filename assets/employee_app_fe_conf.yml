@@ -1,4 +1,4 @@
-app_version: 0.0.4
+config_demo_value: rh4.2
 navbar_rem_size: 4
 other_configs:
   conf1: val1
