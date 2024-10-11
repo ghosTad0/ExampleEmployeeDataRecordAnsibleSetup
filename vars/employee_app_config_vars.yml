@@ -3,11 +3,11 @@ navbar_rem_size: 5
 
 # server specific config parameters
 aap_webserver1:
-  config_demo_value: evening_demo_forWS1
+  config_demo_value: aap_demo_friday1
   other_configs:
     conf1: conf1_new
 
 aap_webserver2:
-  config_demo_value: evening_demo_forWS2
+  config_demo_value: aap_demo_friday2
   other_configs:
     conf1: conf2_new
