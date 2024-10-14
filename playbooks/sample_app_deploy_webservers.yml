@@ -4,6 +4,8 @@
   vars_files:
     - ../vars/deploy_sample_app_vars.yml
     - ../vars/common_vars.yml
+  # vars:
+  #   sample_app_version: 0.0.7
   become: yes
   tasks:
     - name: yum update
@@ -81,15 +83,45 @@
 
     # # - name: Setup nginx, for now ignore it, if it seems mandatory (you'll identify when testing) set it up.
 
-    - name: Creating local env file needed for the dev mode run
-      copy:
-        src: "../assets/.env.local"
-        dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+    - name: Creating __production_build directory
+      file:
+        path: "{{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma/migrations"
+        state: directory
+
+    - name: Copy schema.prisma and migrations to the prisma directory
+      ansible.builtin.shell:
+        cmd:  |
+          cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/prisma/* {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma/
 
     - name: Installing node dependancies for the sample application
       ansible.builtin.shell:
         cmd:  npm install
         chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    - name: Running db client build for the sample application
+      ansible.builtin.shell:
+        cmd:  export PATH="$PATH:/usr/local/bin" && npm run prisma:generate
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    - name: Run application build
+      ansible.builtin.shell:
+        cmd: npm run build
+        chdir: "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    - name: Copy application build to the __production_build
+      ansible.builtin.shell:
+        cmd:  |
+          cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/standalone/*  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build
+          cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/standalone/.next/  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build
+          cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/static/  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/.next/
+
+    - name: Copy migrations to the production migrations directory
+      shell: cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_migrations/ {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma
+
+    - name: Creating local env file needed for the dev mode run
+      copy:
+        src: "../assets/.env.local"
+        dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
 
     - name: Checking npm global install directory, for checking existance of pm2, dotenv
       ansible.builtin.shell:
@@ -101,15 +133,24 @@
         cmd: npm install -g dotenv-cli pm2
       when: "('dotenv-cli' or 'pm2') not in npm_global_installs_details.stdout"
 
+    - name: Read the .env.local file from remote host
+      slurp:
+        src: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+      register: env_file_content
+
+    - name: Set environment variables in /etc/environment
+      lineinfile:
+        path: /etc/environment
+        line: "{{ item }}"
+        state: present
+        create: yes
+      loop: "{{ env_file_content['content'] | b64decode | split('\n') }}"
+      when: item != ""
+
     - name: Running migration for sample application
       ansible.builtin.shell:
-        cmd:  export PATH="$PATH:/usr/local/bin" && npm run migrate:dev
-        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
-
-    - name: Running db client build for the sample application
-      ansible.builtin.shell:
-        cmd:  export PATH="$PATH:/usr/local/bin" && npm run prisma:generate
-        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+        cmd:  export PATH="$PATH:/usr/local/bin" && npx prisma migrate deploy
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}/__production_build"
 
     # - name: Running the sample application
     #   ansible.builtin.shell:
