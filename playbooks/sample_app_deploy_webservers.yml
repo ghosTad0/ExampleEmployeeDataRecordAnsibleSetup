@@ -189,9 +189,15 @@
           pm2 set pm2-logrotate:compress true
       when: "'pm2-logrotate' not in pm2_job_list_details.stdout"
 
-    - name: Create the log folder structure
+    - name: Create the pm2 log folder structure
       ansible.builtin.file:
-        path: "{{ pm2_js_logs_directory }}"
+        path: "{{ pm2_js_logs_directoryemployee_record_book_winston_logs_directory }}"
+        state: directory
+        mode: '0755'
+
+    - name: Create the winston log folder structure
+      ansible.builtin.file:
+        path: "{{ employee_record_book_winston_logs_directory }}"
         state: directory
         mode: '0755'
 
