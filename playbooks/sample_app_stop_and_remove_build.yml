@@ -24,3 +24,16 @@
       ansible.builtin.file:
         path: "{{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build"
         state: absent
+
+    - name: Read the .env.local file from remote host
+      slurp:
+        src: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+      register: env_file_content
+
+    - name: Remove environment variables which are related to app from /etc/environment
+      lineinfile:
+        path: /etc/environment
+        line: "{{ item }}"
+        state: absent
+      loop: "{{ env_file_content['content'] | b64decode | split('\n') }}"
+      when: item != ""
