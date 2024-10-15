@@ -25,6 +25,11 @@
         path: "{{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build"
         state: absent
 
+    - name: Remove .next cache
+      ansible.builtin.file:
+        path: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.next"
+        state: absent
+
     - name: Read the .env.local file from remote host
       slurp:
         src: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
