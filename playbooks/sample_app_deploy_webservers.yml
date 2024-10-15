@@ -191,7 +191,7 @@
 
     - name: Create the pm2 log folder structure
       ansible.builtin.file:
-        path: "{{ pm2_js_logs_directoryemployee_record_book_winston_logs_directory }}"
+        path: "{{ pm2_js_logs_directory }}"
         state: directory
         mode: '0755'
 
