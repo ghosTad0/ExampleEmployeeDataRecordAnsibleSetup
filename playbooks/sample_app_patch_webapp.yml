@@ -1,0 +1,155 @@
+---
+- name: SampleApp Patch Playbook
+  hosts: webservers
+  vars_files:
+    - ../vars/deploy_sample_app_vars.yml
+    - ../vars/common_vars.yml
+  # vars:
+  #   sample_app_version: 0.0.7
+  become: yes
+  tasks:
+    - name: Check App source location existance
+      ansible.builtin.stat:
+        path: "{{ sample_app_src_dir }}"
+      register: app_source_location_details
+
+    - name: Create a location to save sample app
+      ansible.builtin.file:
+        path: "{{ sample_app_src_dir }}"
+        state: directory
+        mode: '0755' # Optional: Set permissions
+      when: not (app_source_location_details.stat.isdir | default(False)) # this is not required. only if the folder is not present it will do it's work
+
+    - name: Create a location to save sample app configs
+      ansible.builtin.file:
+        path: "{{ sample_app_config_dir }}/employee_data_record/static_srcs"
+        state: directory
+        mode: '0755' # Optional: Set permissions
+
+    - name: Copying sample app configs to webapp_data directory
+      copy:
+        src: "../assets/employee_app_fe_conf.yml"
+        dest: "{{ sample_app_config_dir }}/employee_data_record/static_srcs"
+      ignore_errors: yes
+
+    - name: Git clone the sample app, update and checkout
+      git:
+        repo: "{{ sample_app_git_repo }}"
+        dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
+        clone: yes
+        update: yes
+        version: "{{ sample_app_version  | default('0.0.1')}}"
+
+    # # - name: Setup nginx, for now ignore it, if it seems mandatory (you'll identify when testing) set it up.
+
+    - name: Creating __production_build directory
+      file:
+        path: "{{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma/migrations"
+        state: directory
+
+    - name: Copy schema.prisma and migrations to the prisma directory
+      ansible.builtin.shell:
+        cmd:  |
+          cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/prisma/* {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma/
+
+    - name: Installing node dependancies for the sample application
+      ansible.builtin.shell:
+        cmd:  npm install
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    - name: Running db client build for the sample application
+      ansible.builtin.shell:
+        cmd:  export PATH="$PATH:/usr/local/bin" && npm run prisma:generate
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    - name: Run application build
+      ansible.builtin.shell:
+        cmd: npm run build
+        chdir: "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+
+    - name: Copy application build to the __production_build
+      ansible.builtin.shell:
+        cmd:  |
+          cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/standalone/*  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build
+          cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/standalone/.next/  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build
+          cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/static/  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/.next/
+
+    - name: Copy migrations to the production migrations directory
+      shell: cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_migrations/ {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma
+
+    - name: Creating local env file needed for the dev mode run
+      copy:
+        src: "../assets/.env.local"
+        dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+
+    # - name: Checking npm global install directory, for checking existance of pm2, dotenv
+    #   ansible.builtin.shell:
+    #     cmd: npm list -g
+    #   register: npm_global_installs_details
+
+    # - name: Installing global node dependancies
+    #   ansible.builtin.shell:
+    #     cmd: npm install -g dotenv-cli pm2
+    #   when: "('dotenv-cli' or 'pm2') not in npm_global_installs_details.stdout"
+
+    - name: Read the .env.local file from remote host
+      slurp:
+        src: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+      register: env_file_content
+
+    - name: Set environment variables in /etc/environment
+      lineinfile:
+        path: /etc/environment
+        line: "{{ item }}"
+        state: present
+        create: yes
+      loop: "{{ env_file_content['content'] | b64decode | split('\n') }}"
+      when: item != ""
+
+    - name: Running migration for sample application
+      ansible.builtin.shell:
+        cmd:  export PATH="$PATH:/usr/local/bin" && npx prisma migrate deploy
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}/__production_build"
+
+    # - name: Copy pm2 ecosystem for running app
+    #   copy:
+    #     src: "../assets/ecosystem-employee-record-book.config.js"
+    #     dest: "{{ pm2_js_file_directory }}"
+
+    - name: Check pm2 job list
+      ansible.builtin.shell:
+        cmd: |
+          export PATH="$PATH:/usr/local/bin"
+          pm2 list
+      register: pm2_job_list_details
+
+    - name: Install log rotate lib for pm2
+      ansible.builtin.shell:
+        cmd: export PATH="$PATH:/usr/local/bin" && pm2 install pm2-logrotate
+      when: "'pm2-logrotate' not in pm2_job_list_details.stdout"
+
+    - name: Setting up log rotate feature properties for pm2
+      ansible.builtin.shell:
+        cmd: |
+          export PATH="$PATH:/usr/local/bin"
+          pm2 set pm2-logrotate:max_size 10M
+          pm2 set pm2-logrotate:retain 30
+          pm2 set pm2-logrotate:compress true
+      when: "'pm2-logrotate' not in pm2_job_list_details.stdout"
+
+    # - name: Create the pm2 log folder structure
+    #   ansible.builtin.file:
+    #     path: "{{ pm2_js_logs_directory }}"
+    #     state: directory
+    #     mode: '0755'
+
+    # - name: Create the winston log folder structure
+    #   ansible.builtin.file:
+    #     path: "{{ employee_record_book_winston_logs_directory }}"
+    #     state: directory
+    #     mode: '0755'
+
+    - name: Run the Sample app with pm2
+      ansible.builtin.shell:
+        cmd: export PATH="$PATH:/usr/local/bin" && pm2 start ecosystem-employee-record-book.config.js
+        chdir: "{{ pm2_js_file_directory }}"
