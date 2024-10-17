@@ -76,7 +76,7 @@
         dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
         clone: yes
         update: yes
-        version: "{{ sample_app_version  | default('0.0.1')}}"
+        version: "{{ sample_app_version  | default('0.0.1-bc')}}"
         # version: "{{ lookup('env', 'sample_app_version') | default('0.0.1') }}"
       # when: (not sample_app_repo_details.stat.exists) and (not (sample_app_repo_details.stat.isdir | default(True))) #wrong
       # when: not (sample_app_repo_details.stat.isdir | default(False)) #taken after evaluating SOP
