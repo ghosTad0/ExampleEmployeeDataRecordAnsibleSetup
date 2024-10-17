@@ -19,6 +19,19 @@
           pm2 stop {{ sample_app_pm2_app_name }}
           pm2 delete {{ sample_app_pm2_app_name }}
       when: "sample_app_pm2_app_name in pm2_job_list_details.stdout"
+
+    - name: Read the .env.local file from remote host
+      slurp:
+        src: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+      register: env_file_content
+
+    - name: Remove environment variables which are related to app from /etc/environment
+      lineinfile:
+        path: /etc/environment
+        line: "{{ item }}"
+        state: absent
+      loop: "{{ env_file_content['content'] | b64decode | split('\n') }}"
+      when: item != ""
         
     - name: Remove the pm2 js file from the pm2 js files list (if job exists)
       ansible.builtin.file:
