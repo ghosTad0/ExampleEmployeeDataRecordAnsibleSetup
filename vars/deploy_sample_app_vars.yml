@@ -1,7 +1,9 @@
 sample_app_src_dir: /hms/apps
 sample_app_config_dir: /hms/data/webapp_data
 sample_app_git_repo: https://github.com/ghosTad0/ExampleEmployeeDataRecord.git
+# sample_app_git_repo: https://<USERNAME>:<PASSWORD>@sourcecontrol.hsenidmobile.com/systems-integration/employee-management-application.git
 sample_app_name: ExampleEmployeeDataRecord
+# sample_app_name: EmployeeRecorderV2
 sample_app_logs_directory: /hms/logs/employee_record_book_logs
 pm2_js_file_directory: /hms/installs/pm2_js_files
 pm2_js_logs_directory: /hms/logs/employee_record_book_logs
