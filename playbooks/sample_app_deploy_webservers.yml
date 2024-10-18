@@ -230,5 +230,5 @@
 
     - name: Run the Sample app with pm2
       ansible.builtin.shell:
-        cmd: export PATH="$PATH:/usr/local/bin" && pm2 start ecosystem-employee-record-book.config.js
+        cmd: export PATH="$PATH:/usr/local/bin" && pm2 start {{ ecosystem_file_name }}
         chdir: "{{ pm2_js_file_directory }}"
