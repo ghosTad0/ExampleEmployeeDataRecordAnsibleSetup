@@ -125,14 +125,14 @@
           cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/standalone/.next/  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build
           cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/static/  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/.next/
 
-    - name: Copy migrations to the production migrations directory
-      shell: cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_migrations/ {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma
-      register: production_migration_copy_attempt1
-      ignore_errors: yes
+    # - name: Copy migrations to the production migrations directory
+    #   shell: cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_migrations/ {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma
+    #   register: production_migration_copy_attempt1
+    #   ignore_errors: yes
 
-    - name: Copy migrations to the production migrations directory from dev migrations
-      shell: cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/prisma/migrations/* {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma
-      when: production_migration_copy_attempt1 is failed
+    # - name: Copy migrations to the production migrations directory from dev migrations
+    #   shell: cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/prisma/migrations/* {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma/migr
+    #   when: production_migration_copy_attempt1 is failed
 
     # - name: Creating local env file needed for the dev mode run
     #   copy:
