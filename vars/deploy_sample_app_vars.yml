@@ -17,3 +17,10 @@ dbhost: 172.27.5.98
 dbport: 3306
 dbuser: user
 dbpass: password
+
+#config file name variables
+fe_config_file_name: employee_recorder_v2_fe_conf.yml
+ecosystem_file_name: ecosystem_employee_recorder_v2.config.js
+
+#pm2 related variables
+app_pm2_identifier: employee-recorder-v2

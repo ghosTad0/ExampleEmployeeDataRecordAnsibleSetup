@@ -45,7 +45,7 @@
     - name: Copying sample app configs to webapp_data directory
       copy:
         src: "../assets/employee_app_fe_conf.yml"
-        dest: "{{ sample_app_config_dir }}/employee_data_record/static_srcs"
+        dest: "{{ sample_app_config_dir }}/{{ sample_app_name }}/static_srcs/{{ fe_config_file_name }}"
       ignore_errors: yes
 
     # - name: Check sample app git repo existance
@@ -118,12 +118,14 @@
         cmd: npm run build
         chdir: "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
 
-    - name: Copy application build to the __production_build
-      ansible.builtin.shell:
-        cmd:  |
-          cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/standalone/*  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build
-          cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/standalone/.next/  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build
-          cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/static/  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/.next/
+    #========================================================================== THIS IS FOR STANDALONE, AND STANDALONE WITH SERVER ACTIONS DOES NOT WORK FOR SOME REASON IN SERVERS. FINDOUT!!! =========
+    # - name: Copy application build to the __production_build
+    #   ansible.builtin.shell:
+    #     cmd:  |
+    #       cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/standalone/*  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build
+    #       cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/standalone/.next/  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build
+    #       cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/static/  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/.next/
+    #=====================================================================================================================================================================================================
 
     # - name: Copy migrations to the production migrations directory
     #   shell: cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_migrations/ {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma
@@ -170,7 +172,8 @@
     - name: Running migration for sample application
       ansible.builtin.shell:
         cmd:  export PATH="$PATH:/usr/local/bin" && npx prisma migrate deploy
-        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}/__production_build"
+        # chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}/__production_build"
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
 
     # - name: Running the sample application
     #   ansible.builtin.shell:
@@ -183,22 +186,26 @@
         state: directory
         mode: '0755'
 
-    - name: Copy pm2 ecosystem for running app
-      copy:
-        src: "../assets/ecosystem-employee-record-book.config.js"
-        dest: "{{ pm2_js_file_directory }}"
+    - name: Copy pm2 ecosystem for running app after filling
+      template:
+        src: "../templates/common_ecosystem_template.js.j2"
+        dest: "{{ pm2_js_file_directory }}/{{ ecosystem_file_name }}"  # SPECIFY DIFFERENT FILE NAME, IF DIDNT THE J2 WILL BE REMOVED AND THAT WOULD BE THE FILE NAME THAT COPIES
 
     - name: Check pm2 job list
       ansible.builtin.shell:
         cmd: |
           export PATH="$PATH:/usr/local/bin"
-          pm2 list
+          pm2 jlist | jq '[.[] | {id: .pid, name: .name}]'
       register: pm2_job_list_details
+
+    - name: Parse pm2 job list as an ansible variable
+      ansible.builtin.set_fact:
+        pm2_job_list: "{{ pm2_job_list_details.stdout | from_json }}"
 
     - name: Install log rotate lib for pm2
       ansible.builtin.shell:
         cmd: export PATH="$PATH:/usr/local/bin" && pm2 install pm2-logrotate
-      when: "'pm2-logrotate' not in pm2_job_list_details.stdout"
+      when: "'pm2-logrotate' not in (pm2_job_list | map(attribute='name'))"
 
     - name: Setting up log rotate feature properties for pm2
       ansible.builtin.shell:
