@@ -43,7 +43,7 @@
 
             - name: Create the db required for sample app only when it's not there
               ansible.builtin.shell:
-                cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_app_db;"
+                cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_recorder_v2_sample_app_db;"
               register: create_db_init_attempt_status
               ignore_errors: yes
 
