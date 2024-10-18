@@ -43,7 +43,7 @@
 
             - name: Create the db required for sample app only when it's not there
               ansible.builtin.shell:
-                cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_recorder_v2_sample_app_db;"
+                cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE {{ sample_app_dbname }};"
               register: create_db_init_attempt_status
               ignore_errors: yes
 
@@ -55,12 +55,12 @@
 
             - name: Create the db required for sample app retry
               ansible.builtin.shell:
-                cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE employee_app_db;"
+                cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE {{ sample_app_dbname }};"
               when: create_db_init_attempt_status.failed | default(False)
               ignore_errors: yes
           # when: "'mysql_docker' not in mysql_docker_installation_details.stdout"
           # when: not 'CREATE,' in previlege_details.stdout | default(True)
-      when: not 'employee_app_db' in mysql_db_list.stdout | default(True)
+      when: not sample_app_dbname in mysql_db_list.stdout | default(True)
 
     - name: mysql container already running scenario, task execution
       block:

@@ -3,10 +3,17 @@ sample_app_config_dir: /hms/data/webapp_data
 # sample_app_git_repo: https://github.com/ghosTad0/ExampleEmployeeDataRecord.git
 sample_app_git_repo: sourcecontrol.hsenidmobile.com/systems-integration/employeerecorder-v2.git
 # sample_app_name: ExampleEmployeeDataRecord
-sample_app_name: EmployeeRecorder-V2
 sample_app_logs_directory: /hms/logs/employee_record_book_logs
 pm2_js_file_directory: /hms/installs/pm2_js_files
 pm2_js_logs_directory: /hms/logs/employee_record_book_logs
 employee_record_book_winston_logs_directory: /hms/logs/employee_record_book_winston_logs
 sample_app_pm2_js_file: ecosystem-employee-record-book.config.js
 sample_app_pm2_app_name: employee-record-book
+
+#.env file variables
+sample_app_name: EmployeeRecorder-V2
+sample_app_dbname: employee_recorder_v2_sample_app_db
+dbhost: 172.27.5.98
+dbport: 3306
+dbuser: user
+dbpass: password

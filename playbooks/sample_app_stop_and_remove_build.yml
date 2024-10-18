@@ -9,8 +9,12 @@
       ansible.builtin.shell:
         cmd: |
           export PATH="$PATH:/usr/local/bin"
-          pm2 list
+          pm2 jlist | jq '[.[] | {id: .pid, name: .name}]'
       register: pm2_job_list_details
+
+    - name: Parse pm2 job list as an ansible variable
+      ansible.builtin.set_fact:
+        pm2_job_list: "{{ pm2_job_list_details.stdout | from_json }}"
 
     - name: Stop and delete the sample application from pm2 job list (if job exists)
       ansible.builtin.shell:
@@ -18,7 +22,7 @@
           export PATH="$PATH:/usr/local/bin"
           pm2 stop {{ sample_app_pm2_app_name }}
           pm2 delete {{ sample_app_pm2_app_name }}
-      when: "sample_app_pm2_app_name in pm2_job_list_details.stdout"
+      when: "sample_app_pm2_app_name in (pm2_job_list | map(attribute='name'))"
 
     - name: Remove production build
       ansible.builtin.file:

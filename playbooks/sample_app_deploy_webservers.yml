@@ -128,9 +128,13 @@
     - name: Copy migrations to the production migrations directory
       shell: cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_migrations/ {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma
 
-    - name: Creating local env file needed for the dev mode run
-      copy:
-        src: "../assets/.env.local"
+    # - name: Creating local env file needed for the dev mode run
+    #   copy:
+    #     src: "../assets/.env.local"
+    #     dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+    - name: Fill .env.local template and copy to server
+      template:
+        src: ../templates/.env.local.j2
         dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
 
     - name: Checking npm global install directory, for checking existance of pm2, dotenv
