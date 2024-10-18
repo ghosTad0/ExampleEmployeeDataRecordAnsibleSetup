@@ -34,11 +34,21 @@
 
     - name: Git clone the sample app, update and checkout
       git:
+        repo: "https://{{ git_username }}:{{ git_pat }}@{{ sample_app_git_repo }}"
+        dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
+        clone: yes
+        update: yes
+        version: "{{ sample_app_version  | default('0.0.1-bc')}}"
+      when: git_username is defined
+
+    - name: Git clone the sample app, update and checkout
+      git:
         repo: "{{ sample_app_git_repo }}"
         dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
         clone: yes
         update: yes
-        version: "{{ sample_app_version  | default('0.0.1')}}"
+        version: "{{ sample_app_version  | default('0.0.1-bc')}}"
+      when: git_username is not defined
 
     # # - name: Setup nginx, for now ignore it, if it seems mandatory (you'll identify when testing) set it up.
 
