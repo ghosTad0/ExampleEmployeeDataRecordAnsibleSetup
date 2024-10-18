@@ -20,9 +20,9 @@
       ansible.builtin.shell:
         cmd: |
           export PATH="$PATH:/usr/local/bin"
-          pm2 stop {{ sample_app_pm2_app_name }}
-          pm2 delete {{ sample_app_pm2_app_name }}
-      when: "sample_app_pm2_app_name in (pm2_job_list | map(attribute='name'))"
+          pm2 stop {{ app_pm2_identifier }}
+          pm2 delete {{ app_pm2_identifier }}
+      when: "app_pm2_identifier in (pm2_job_list | map(attribute='name'))"
 
     - name: Read the .env.local file from remote host
       slurp:

@@ -38,7 +38,7 @@
 
     - name: Create a location to save sample app configs
       ansible.builtin.file:
-        path: "{{ sample_app_config_dir }}/employee_data_record/static_srcs"
+        path: "{{ sample_app_config_dir }}/{{ sample_app_name }}/static_srcs"
         state: directory
         mode: '0755' # Optional: Set permissions
 
