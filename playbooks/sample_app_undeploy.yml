@@ -39,7 +39,7 @@
         
     - name: Remove the pm2 js file from the pm2 js files list
       ansible.builtin.file:
-        path: "{{ pm2_js_file_directory }}/{{ sample_app_pm2_js_file }}"
+        path: "{{ pm2_js_file_directory }}/{{ ecosystem_file_name }}"
         state: absent
 
     # - name: Remove the logs
