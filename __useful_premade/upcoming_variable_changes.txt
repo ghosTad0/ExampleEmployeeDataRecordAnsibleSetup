@@ -1,0 +1,7 @@
+replace variables
+`````````````````
+
+sample_app_dbname    -> {{ sample_app_name | lower }}_db
+fe_config_file_name  -> {{ sample_app_name }}_fe_config.yml
+ecosystem_file_name  -> ecosystem_{{ sample_app_name }}.config.js
+app_pm2_identifier   -> {{ sample_app_name }}
