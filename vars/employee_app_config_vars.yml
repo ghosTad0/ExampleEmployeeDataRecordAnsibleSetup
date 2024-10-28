@@ -1,13 +1,13 @@
 # common config parameters
-navbar_rem_size: 5
+navbar_rem_size: 6
 
 # server specific config parameters
 aap_webserver1:
-  config_demo_value: evening_friday_demo1
+  config_demo_value: test_demo1
   other_configs:
     conf1: conf1_new
 
 aap_webserver2:
-  config_demo_value: evening_friday_demo2
+  config_demo_value: test_demo2
   other_configs:
     conf1: conf2_new
