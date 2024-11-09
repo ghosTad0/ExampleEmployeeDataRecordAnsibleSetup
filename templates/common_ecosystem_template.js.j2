@@ -1,13 +1,13 @@
 module.exports = {
     apps: [
       {
-        name: "{{ app_pm2_identifier }}",
+        name: "{{ sample_app_name_cleaned | lower }}",
         script: "npm",
         args: "run start",
-        cwd: "{{ sample_app_src_dir }}/{{ sample_app_name }}",
-        log_file: "/hms/logs/{{ sample_app_name }}_logs/{{ sample_app_name }}.log",
-        out_file: "/hms/logs/{{ sample_app_name }}_logs/{{ sample_app_name }}-out.log",
-        error_file: "/hms/logs/{{ sample_app_name }}_logs/{{ sample_app_name }}-error.log",
+        cwd: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}",
+        log_file: "/hms/logs/{{ sample_app_name_cleaned }}_logs/{{ sample_app_name_cleaned }}.log",
+        out_file: "/hms/logs/{{ sample_app_name_cleaned }}_logs/{{ sample_app_name_cleaned }}-out.log",
+        error_file: "/hms/logs/{{ sample_app_name_cleaned }}_logs/{{ sample_app_name_cleaned }}-error.log",
         merge_logs: true,
         time: true,
         //env: {

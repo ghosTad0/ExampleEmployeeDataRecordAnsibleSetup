@@ -5,6 +5,10 @@
   vars_files:
     - ../vars/deploy_sample_app_vars.yml
   tasks:
+    - name: Cleaning sample app name
+      set_fact:
+        sample_app_name_cleaned: "{{ sample_app_name | regex_replace('[^a-zA-Z0-9]', '_') }}"
+
     - name: Check pm2 job list
       ansible.builtin.shell:
         cmd: |
@@ -16,28 +20,33 @@
       ansible.builtin.set_fact:
         pm2_job_list: "{{ pm2_job_list_details.stdout | from_json }}"
 
+    - name: Web app existance check
+      set_fact:
+        web_app_existance_check: "{{ (sample_app_name_cleaned | lower) in (pm2_job_list | map(attribute='name')) }}"
+
     - name: Stop and delete the sample application from pm2 job list (if job exists)
       ansible.builtin.shell:
         cmd: |
           export PATH="$PATH:/usr/local/bin"
-          pm2 stop {{ app_pm2_identifier }}
-          pm2 delete {{ app_pm2_identifier }}
-      when: "app_pm2_identifier in (pm2_job_list | map(attribute='name'))"
+          pm2 stop {{ sample_app_name_cleaned | lower }}
+          pm2 delete {{ sample_app_name_cleaned | lower }}
+      when: web_app_existance_check
 
     - name: Remove production build
       ansible.builtin.file:
-        path: "{{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build"
+        path: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/__production_build"
         state: absent
 
     - name: Remove .next cache
       ansible.builtin.file:
-        path: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.next"
+        path: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/.next"
         state: absent
 
     - name: Read the .env.local file from remote host
       slurp:
-        src: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+        src: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/.env.local"
       register: env_file_content
+      ignore_errors: yes
 
     - name: Remove environment variables which are related to app from /etc/environment
       lineinfile:
@@ -45,9 +54,10 @@
         line: "{{ item }}"
         state: absent
       loop: "{{ env_file_content['content'] | b64decode | split('\n') }}"
-      when: item != ""
+      when: (item != "") and (env_file_content is succeeded)
+      ignore_errors: yes
 
     - name: Remove .env.local file from sample app source
       ansible.builtin.file:
-        path: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+        path: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/.env.local"
         state: absent

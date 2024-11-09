@@ -8,6 +8,10 @@
   become: yes
   tasks:
 
+    - name: Cleaning sample app name
+      set_fact:
+        sample_app_name_cleaned: "{{ sample_app_name | regex_replace('[^a-zA-Z0-9]', '_') }}"
+
     - name: Checking docker setup of mysql
       ansible.builtin.shell:
         cmd: docker ps
@@ -29,6 +33,14 @@
       when: not mysql_docker_installation_details.failed
       ignore_errors: yes
 
+    - name: Set the database check flag
+      set_fact:
+        db_check: "{{ (sample_app_name_cleaned | lower ~ '_db') not in mysql_db_list.stdout | default(True) }}"
+
+    - name: Debug the database check flag
+      debug:
+        var: db_check
+
     - name: mysql container not found scenario, task execution
       block:
         - name: setting up mysql and required dbs, task execution
@@ -43,7 +55,7 @@
 
             - name: Create the db required for sample app only when it's not there
               ansible.builtin.shell:
-                cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE {{ sample_app_dbname }};"
+                cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE {{ sample_app_name_cleaned | lower }}_db;"
               register: create_db_init_attempt_status
               ignore_errors: yes
 
@@ -55,12 +67,12 @@
 
             - name: Create the db required for sample app retry
               ansible.builtin.shell:
-                cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE {{ sample_app_dbname }};"
+                cmd:  docker exec -it mysql_docker mysql -u user -ppassword -e "CREATE DATABASE {{ sample_app_name_cleaned | lower }}_db;"
               when: create_db_init_attempt_status.failed | default(False)
               ignore_errors: yes
           # when: "'mysql_docker' not in mysql_docker_installation_details.stdout"
           # when: not 'CREATE,' in previlege_details.stdout | default(True)
-      when: not sample_app_dbname in mysql_db_list.stdout | default(True)
+      when: db_check
 
     - name: mysql container already running scenario, task execution
       block:

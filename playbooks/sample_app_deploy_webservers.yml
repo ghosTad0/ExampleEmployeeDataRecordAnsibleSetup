@@ -8,8 +8,12 @@
   #   sample_app_version: 0.0.7
   become: yes
   tasks:
-    - name: yum update
-      ansible.builtin.shell: yum update -y
+    # - name: yum update
+    #   ansible.builtin.shell: yum update -y
+
+    - name: Cleaning sample app name
+      set_fact:
+        sample_app_name_cleaned: "{{ sample_app_name | regex_replace('[^a-zA-Z0-9]', '_') }}"
 
     - name: Test npm existance
       ansible.builtin.shell: npm --version
@@ -38,19 +42,19 @@
 
     - name: Create a location to save sample app configs
       ansible.builtin.file:
-        path: "{{ sample_app_config_dir }}/{{ sample_app_name }}/static_srcs"
+        path: "{{ sample_app_config_dir }}/{{ sample_app_name_cleaned }}/static_srcs"
         state: directory
         mode: '0755' # Optional: Set permissions
 
     - name: Copying sample app configs to webapp_data directory
       copy:
         src: "../assets/employee_app_fe_conf.yml"
-        dest: "{{ sample_app_config_dir }}/{{ sample_app_name }}/static_srcs/{{ fe_config_file_name }}"
+        dest: "{{ sample_app_config_dir }}/{{ sample_app_name_cleaned }}/static_srcs/{{ sample_app_name_cleaned }}_fe_config.yml"
       ignore_errors: yes
 
     # - name: Check sample app git repo existance
     #   ansible.builtin.stat:
-    #     path: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
+    #     path: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}"
     #   register: sample_app_repo_details
 
     # - name: Print a debug message
@@ -66,14 +70,14 @@
     # - name: Check the git tag of the sample app source
     #   ansible.builtin.shell:
     #     cmd: git status
-    #     chdir: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
+    #     chdir: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}"
     #   register: git_status_details
     #   ignore_errors: yes
 
     - name: Git clone the sample app, update and checkout
       git:
         repo: "https://{{ git_username }}:{{ git_pat }}@{{ sample_app_git_repo }}"
-        dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
+        dest: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}"
         clone: yes
         update: yes
         version: "{{ sample_app_version  | default('0.0.1-normal-build')}}"
@@ -82,7 +86,7 @@
     - name: Git clone the sample app, update and checkout
       git:
         repo: "{{ sample_app_git_repo }}"
-        dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}"
+        dest: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}"
         clone: yes
         update: yes
         version: "{{ sample_app_version  | default('0.0.1-normal-build')}}"
@@ -95,55 +99,55 @@
 
     - name: Creating __production_build directory
       file:
-        path: "{{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma/migrations"
+        path: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/__production_build/prisma/migrations"
         state: directory
 
     - name: Copy schema.prisma and migrations to the prisma directory
       ansible.builtin.shell:
         cmd:  |
-          cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/prisma/* {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma/
+          cp -r {{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/prisma/* {{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/__production_build/prisma/
 
     - name: Installing node dependancies for the sample application
       ansible.builtin.shell:
         cmd:  npm install
-        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}"
 
     - name: Running db client build for the sample application
       ansible.builtin.shell:
         cmd:  export PATH="$PATH:/usr/local/bin" && npm run prisma:generate
-        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}"
 
     - name: Run application build
       ansible.builtin.shell:
         cmd: npm run build
-        chdir: "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+        chdir: "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}"
 
     #========================================================================== THIS IS FOR STANDALONE, AND STANDALONE WITH SERVER ACTIONS DOES NOT WORK FOR SOME REASON IN SERVERS. FINDOUT!!! =========
     # - name: Copy application build to the __production_build
     #   ansible.builtin.shell:
     #     cmd:  |
-    #       cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/standalone/*  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build
-    #       cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/standalone/.next/  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build
-    #       cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/.next/static/  {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/.next/
+    #       cp -r {{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/.next/standalone/*  {{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/__production_build
+    #       cp -r {{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/.next/standalone/.next/  {{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/__production_build
+    #       cp -r {{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/.next/static/  {{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/__production_build/.next/
     #=====================================================================================================================================================================================================
 
     # - name: Copy migrations to the production migrations directory
-    #   shell: cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_migrations/ {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma
+    #   shell: cp -r {{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/__production_migrations/ {{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/__production_build/prisma
     #   register: production_migration_copy_attempt1
     #   ignore_errors: yes
 
     # - name: Copy migrations to the production migrations directory from dev migrations
-    #   shell: cp -r {{ sample_app_src_dir }}/{{ sample_app_name }}/prisma/migrations/* {{ sample_app_src_dir }}/{{ sample_app_name }}/__production_build/prisma/migr
+    #   shell: cp -r {{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/prisma/migrations/* {{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/__production_build/prisma/migr
     #   when: production_migration_copy_attempt1 is failed
 
     # - name: Creating local env file needed for the dev mode run
     #   copy:
     #     src: "../assets/.env.local"
-    #     dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+    #     dest: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/.env.local"
     - name: Fill .env.local template and copy to server
       template:
         src: ../templates/.env.local.j2
-        dest: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+        dest: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/.env.local"
 
     - name: Checking npm global install directory, for checking existance of pm2, dotenv
       ansible.builtin.shell:
@@ -157,7 +161,7 @@
 
     - name: Read the .env.local file from remote host
       slurp:
-        src: "{{ sample_app_src_dir }}/{{ sample_app_name }}/.env.local"
+        src: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/.env.local"
       register: env_file_content
 
     - name: Set environment variables in /etc/environment
@@ -172,13 +176,13 @@
     - name: Running migration for sample application
       ansible.builtin.shell:
         cmd:  export PATH="$PATH:/usr/local/bin" && npx prisma migrate deploy
-        # chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}/__production_build"
-        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+        # chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}/__production_build"
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}"
 
     # - name: Running the sample application
     #   ansible.builtin.shell:
     #     cmd:  npm run dev
-    #     chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name }}"
+    #     chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}"
 
     - name: Create pm2 js file directory
       ansible.builtin.file:
@@ -189,7 +193,7 @@
     - name: Copy pm2 ecosystem for running app after filling
       template:
         src: "../templates/common_ecosystem_template.js.j2"
-        dest: "{{ pm2_js_file_directory }}/{{ ecosystem_file_name }}"  # SPECIFY DIFFERENT FILE NAME, IF DIDNT THE J2 WILL BE REMOVED AND THAT WOULD BE THE FILE NAME THAT COPIES
+        dest: "{{ pm2_js_file_directory }}/ecosystem_{{ sample_app_name_cleaned }}.config.js"  # SPECIFY DIFFERENT FILE NAME, IF DIDNT THE J2 WILL BE REMOVED AND THAT WOULD BE THE FILE NAME THAT COPIES
 
     - name: Check pm2 job list
       ansible.builtin.shell:
@@ -230,5 +234,5 @@
 
     - name: Run the Sample app with pm2
       ansible.builtin.shell:
-        cmd: export PATH="$PATH:/usr/local/bin" && pm2 start {{ ecosystem_file_name }}
+        cmd: export PATH="$PATH:/usr/local/bin" && pm2 start ecosystem_{{ sample_app_name_cleaned }}.config.js
         chdir: "{{ pm2_js_file_directory }}"
