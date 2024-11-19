@@ -3,11 +3,11 @@ navbar_rem_size: 11
 
 # server specific config parameters
 aap_webserver1:
-  config_demo_value: demo_val11
+  config_demo_value: init_val1
   other_configs:
     conf1: conf1_new
 
 aap_webserver2:
-  config_demo_value: demo_val22
+  config_demo_value: init_val2
   other_configs:
     conf1: conf2_new
