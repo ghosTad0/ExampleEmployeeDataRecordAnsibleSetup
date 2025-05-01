@@ -46,10 +46,20 @@
       when: ansible_facts['os_family'] == "Debian"
 
     - name: install nginx (if RedHat)
-      yum:
-        name: nginx
-        state: latest
+      # yum:
+      #   name: nginx
+      #   state: latest
+      shell:
+        cmd: |
+          yum module enable nginx:stream_version
+          yum install nginx -y
       when: ansible_facts['os_family'] == "RedHat"
+
+    - name: starting nginx service
+      service:
+        name: nginx
+        state: started
+      register: nginx_installation_details
 
     # # OS update
     # - name: update rhel
