@@ -40,6 +40,7 @@
           shell:
             cmd: |
               yum remove nginx -y
+              yum autoremove -y
           when: ansible_facts['os_family'] == 'RedHat'
 
         - name: Remove folder structure
