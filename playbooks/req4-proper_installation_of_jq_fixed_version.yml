@@ -19,7 +19,7 @@
     - name: form jq specific version installing commands.
       # set minor_upgrade_version if it exists in variables, or else use fixed_version
       set_fact:
-        jq_install_cmd_for_redhat: "yum install jq-{{ minor_upgrade_version | default(fixed_version) }} -y"
+        jq_install_cmd_for_redhat: "yum install jq-{{ minor_upgrade_version_rhel | default(fixed_version_rhel) }} -y"
       when: ansible_facts['os_family'] == "RedHat"
 
     # No error, uninstall jq
@@ -44,7 +44,7 @@
     # Now properly install jq version, specify version as well
     - name: Install jq with specific version (Debian/Ubuntu)
       apt:
-        name: jq={{ minor_upgrade_version | default(fixed_version) }}
+        name: jq={{ minor_upgrade_version_debian | default(fixed_version_debian) }}
         state: present
       when: ansible_facts['os_family'] == "Debian"
 

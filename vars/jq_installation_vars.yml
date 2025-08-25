@@ -1,1 +1,2 @@
-fixed_version: 1.6-12.el9
+fixed_version_rhel: 1.6-12.el9
+fixed_version_debian: 1.7.1-3ubuntu0.24.04.1
