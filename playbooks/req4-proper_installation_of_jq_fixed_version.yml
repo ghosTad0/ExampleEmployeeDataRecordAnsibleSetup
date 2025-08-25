@@ -20,6 +20,7 @@
       # set minor_upgrade_version if it exists in variables, or else use fixed_version
       set_fact:
         jq_install_cmd_for_redhat: "yum install jq-{{ minor_upgrade_version | default(fixed_version) }} -y"
+      when: ansible_facts['os_family'] == "RedHat"
 
     # No error, uninstall jq
     - name: jq Uninstallation if found and os release matches to RedHat
