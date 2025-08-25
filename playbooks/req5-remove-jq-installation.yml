@@ -16,10 +16,10 @@
       register: jq_status_details
       ignore_errors: yes
 
-    - name: form jq specific version installing commands.
-      # set minor_upgrade_version if it exists in variables, or else use fixed_version
-      set_fact:
-        jq_install_cmd_for_redhat: "yum install jq-{{ minor_upgrade_version | default(fixed_version) }} -y"
+    # - name: form jq specific version installing commands.
+    #   # set minor_upgrade_version if it exists in variables, or else use fixed_version
+    #   set_fact:
+    #     jq_install_cmd_for_redhat: "yum install jq-{{ minor_upgrade_version | default(fixed_version) }} -y"
 
     # No error, uninstall jq
     - name: jq Uninstallation if found and os release matches to RedHat
