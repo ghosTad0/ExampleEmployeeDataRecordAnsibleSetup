@@ -42,11 +42,10 @@
       when: (jq_status_details is succeeded) and (ansible_facts['os_family'] == "Debian")
 
     # Now properly install jq version, specify version as well
-    - name: install jq (if Debian)
+    - name: Install jq with specific version (Debian/Ubuntu)
       apt:
-        name: jq
-        state: latest
-        version: "{{ minor_upgrade_version | default(fixed_version) }}"
+        name: jq={{ minor_upgrade_version | default(fixed_version) }}
+        state: present
       when: ansible_facts['os_family'] == "Debian"
 
     - name: install jq (if RedHat)
