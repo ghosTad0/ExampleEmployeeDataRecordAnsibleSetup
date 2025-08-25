@@ -1,0 +1,41 @@
+---
+- name: Playbook for removing jq
+  hosts: all
+  vars_files:
+  - ../vars/jq_installation_vars.yml
+  become: yes
+  gather_facts: yes
+  tasks:
+    - name: Checking the OS type
+      debug:
+        msg: "{{ ansible_facts['os_family'] }}"
+
+    - name: jq installation status
+      ansible.builtin.shell:
+        cmd: jq --version
+      register: jq_status_details
+      ignore_errors: yes
+
+    - name: form jq specific version installing commands.
+      # set minor_upgrade_version if it exists in variables, or else use fixed_version
+      set_fact:
+        jq_install_cmd_for_redhat: "yum install jq-{{ minor_upgrade_version | default(fixed_version) }} -y"
+
+    # No error, uninstall jq
+    - name: jq Uninstallation if found and os release matches to RedHat
+      shell:
+        cmd: |
+          yum remove jq -y &&
+          # yum purge jq -y &&
+          yum autoremove -y
+      ignore_errors: yes
+      when: (jq_status_details is succeeded) and (ansible_facts['os_family'] == "RedHat")
+
+    - name: jq Uninstallation if found and os release matches to Debian
+      shell:
+        cmd: |
+          apt remove jq -y &&
+          apt purge jq -y &&
+          apt autoremove -y
+      ignore_errors: yes
+      when: (jq_status_details is succeeded) and (ansible_facts['os_family'] == "Debian")
