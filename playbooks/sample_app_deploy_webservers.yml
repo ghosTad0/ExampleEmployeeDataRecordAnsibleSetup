@@ -112,6 +112,16 @@
         cmd:  npm install
         chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}"
 
+    - name: Checking npm global install directory, for checking existance of pm2, dotenv
+      ansible.builtin.shell:
+        cmd: npm list -g
+      register: npm_global_installs_details
+
+    - name: Installing global node dependancies
+      ansible.builtin.shell:
+        cmd: npm install -g dotenv-cli pm2
+      when: "('dotenv-cli' or 'pm2') not in npm_global_installs_details.stdout"
+
     - name: Running db client build for the sample application
       ansible.builtin.shell:
         cmd:  export PATH="$PATH:/usr/local/bin" && npm run prisma:generate
@@ -148,16 +158,6 @@
       template:
         src: ../templates/.env.local.j2
         dest: "{{ sample_app_src_dir }}/{{ sample_app_name_cleaned }}/.env.local"
-
-    - name: Checking npm global install directory, for checking existance of pm2, dotenv
-      ansible.builtin.shell:
-        cmd: npm list -g
-      register: npm_global_installs_details
-
-    - name: Installing global node dependancies
-      ansible.builtin.shell:
-        cmd: npm install -g dotenv-cli pm2
-      when: "('dotenv-cli' or 'pm2') not in npm_global_installs_details.stdout"
 
     - name: Read the .env.local file from remote host
       slurp:
