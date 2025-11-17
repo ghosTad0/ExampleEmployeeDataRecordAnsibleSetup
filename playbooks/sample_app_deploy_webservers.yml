@@ -208,6 +208,11 @@
               }}
       when: true
 
+    
+    - name: As debug, show the env vars fact
+      ansible.builtin.debug:
+        var: env_vars_for_sample_app
+
 
 
     - name: Running migration for sample application
