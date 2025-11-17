@@ -211,7 +211,9 @@
     - name: Running migration for sample application
       ansible.builtin.shell:
         cmd:  |
-          source /etc/environment
+          set -a
+          . /etc/environment
+          set +a
           export PATH="$PATH:/usr/local/bin" && npx prisma migrate deploy
         # chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}/__production_build"
         chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}"
@@ -235,7 +237,9 @@
     - name: Check pm2 job list
       ansible.builtin.shell:
         cmd: |
-          source /etc/environment
+          set -a
+          . /etc/environment
+          set +a
           export PATH="$PATH:/usr/local/bin"
           pm2 jlist | jq '[.[] | {id: .pid, name: .name}]'
       register: pm2_job_list_details
@@ -247,7 +251,9 @@
     - name: Install log rotate lib for pm2
       ansible.builtin.shell:
         cmd: |
-          source /etc/environment
+          set -a
+          . /etc/environment
+          set +a
           export PATH="$PATH:/usr/local/bin"
           pm2 install pm2-logrotate
       when: "'pm2-logrotate' not in (pm2_job_list | map(attribute='name'))"
@@ -255,7 +261,9 @@
     - name: Setting up log rotate feature properties for pm2
       ansible.builtin.shell:
         cmd: |
-          source /etc/environment
+          set -a
+          . /etc/environment
+          set +a
           export PATH="$PATH:/usr/local/bin"
           pm2 set pm2-logrotate:max_size 10M
           pm2 set pm2-logrotate:retain 30
@@ -277,6 +285,8 @@
     - name: Run the Sample app with pm2
       ansible.builtin.shell:
         cmd: |
-          source /etc/environment
+          set -a
+          . /etc/environment
+          set +a
           export PATH="$PATH:/usr/local/bin" && pm2 start ecosystem_{{ sample_app_name_cleaned }}.config.js
         chdir: "{{ pm2_js_file_directory }}"
