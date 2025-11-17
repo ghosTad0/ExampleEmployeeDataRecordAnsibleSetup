@@ -202,7 +202,7 @@
                   | map('split', '=', 1)
                   | map('trim')
                   | map('map', 'trim')
-                  | map('regex_replace', '^"|"$', '')  # removes quotes from value
+                  | map('regex_replace', '^"|"$', '')
                 )
               }}
       when: true
