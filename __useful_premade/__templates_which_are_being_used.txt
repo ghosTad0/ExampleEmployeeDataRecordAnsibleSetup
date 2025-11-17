@@ -1,0 +1,54 @@
+For webapp deployment
+=====================
+playbooks/install_nginx.yml
+playbooks/install_docker_ubuntu.yml
+playbooks/setup_mysql.yml
+playbooks/sample_app_deploy_appservers.yml
+playbooks/sample_app_deploy_webservers.yml
+
+
+playbooks/sample_app_undeploy.yml
+playbooks/stop_mysql.yml
+playbooks/uninstall_docker_ubuntu.yml
+playbooks/uninstall_nginx.yml
+
+
+playbooks/change_configs_for_webapp.yml
+playbooks/change_configs_specific_servers.yml  (this should be modified. for only webapp case and for some random path config changes.)
+playbooks/verify_webapp_status.yml
+playbooks/sample_app_stop_and_remove_build.yml
+playbooks/sample_app_patch_webapp.yml
+
+
+flow of patch webapp ====:  sample_app_stop_and_remove_build.yml -> sample_app_patch_webapp.yml  (work on them, first find which versions of webapp are compatible for the patching)
+flow of change config for webapps ====: verify_webapp_status.yml -> playbooks/change_configs_for_webapp.yml
+
+
+
+
+
+For other demo purposes
+=======================
+playbooks/req0-1_os_patch.yml
+playbooks/req0-2-proper_installation_of_nginx_allservers.yml
+playbooks/req3_remove_nginx_from_rhel_ubuntu.yml
+playbooks/req4-proper_installation_of_jq_fixed_version.yml
+playbooks/req5-remove-jq-installation.yml
+
+
+
+
+
+Extra vars for used templates
+=============================
+
+
+playbooks/sample_app_deploy_webservers.yml
+``````````````````````````````````````````
+sample_app_name: EmployeeRecorder-V2
+sample_app_git_repo: >-
+  sourcecontrol.hsenidmobile.com/systems-integration/sample-applications/employeerecorder-v2.git
+sample_app_version: 0.0.1-normal-build
+dbhost: 172.16.20.198
+git_pat: x
+git_username: aap
