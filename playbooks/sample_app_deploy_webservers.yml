@@ -198,14 +198,11 @@
             env_vars_for_sample_app: >-
               {{
                 dict(
-                  env_file_content.content
-                  | b64decode
-                  | split('\n')
-                  | select("match", ".+=.+")
-                  | map("regex_replace", '^([^=]+)=(.*)$', '\\1,\\2')
-                  | map("split", ",", 1)
-                  | map("map", "trim")
-                  | map("map", 'regex_replace', "^\"(.*)\"$", "\\1")
+                  (env_file_content.content | b64decode | splitlines("\n"))
+                  | map('split', '=', 1)
+                  | map('trim')
+                  | map('map', 'trim')
+                  | map('regex_replace', '^"|"$', '')  # removes quotes from value
                 )
               }}
       when: true
