@@ -122,6 +122,19 @@
         cmd: npm install -g dotenv-cli pm2
       when: "('dotenv-cli' or 'pm2') not in npm_global_installs_details.stdout"
 
+    - name: For supporting the pm2 install jq task execution
+      block:
+        - name: Check jq installation
+          ansible.builtin.shell:
+            cmd: apt install jq -y
+          when: ansible_facts['os_family'] == "Debian"
+
+        - name: Install jq if not present
+          ansible.builtin.shell:
+            cmd: dnf install jq -y
+          when: ansible_facts['os_family'] == "RedHat"
+      when: true
+
     - name: Running db client build for the sample application
       ansible.builtin.shell:
         cmd:  export PATH="$PATH:/usr/local/bin" && npm run prisma:generate
@@ -173,11 +186,36 @@
       loop: "{{ env_file_content['content'] | b64decode | split('\n') }}"
       when: item != ""
 
+    - name: Set above environment variables in a fact, task execution  (WE HAVE TO TAKE THE ENV VARIABLES TO A FACT AND USE IT LATER IN ALL SHELL TASKS. UNTIL NEW LOGIN SESSION STARTS, THESE PERMENANT ENV VARS WON'T BE AVAILABLE, THE WAY OF TASK EXECUTING IN ANSIBLE WON'T CREATE A NEW LOGIN SESSION, HENCE WE HAVE TO MANUALLY SET IT IN THE SHELL TASKS)
+      block:
+        - name: Read the /etc/environment file
+          slurp:
+            src: /etc/environment
+          register: env_file_content
+
+        - name: Parse /etc/environment into key=value dictionary
+          ansible.builtin.set_fact:
+            env_vars_for_sample_app: >-
+              {{
+                dict(
+                  env_file_content.content
+                  | b64decode
+                  | splitlines()
+                  | select("match", "^[^#]")       # skip comments
+                  | map("split", "=", 1)           # split on first '='
+                  | map("map", "trim")             # trim whitespace
+                )
+              }}
+      when: true
+
+
+
     - name: Running migration for sample application
       ansible.builtin.shell:
         cmd:  export PATH="$PATH:/usr/local/bin" && npx prisma migrate deploy
         # chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}/__production_build"
         chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}"
+      environment: "{{ env_vars_for_sample_app }}"
 
     # - name: Running the sample application
     #   ansible.builtin.shell:
@@ -200,6 +238,7 @@
         cmd: |
           export PATH="$PATH:/usr/local/bin"
           pm2 jlist | jq '[.[] | {id: .pid, name: .name}]'
+      environment: "{{ env_vars_for_sample_app }}"
       register: pm2_job_list_details
 
     - name: Parse pm2 job list as an ansible variable
@@ -209,6 +248,7 @@
     - name: Install log rotate lib for pm2
       ansible.builtin.shell:
         cmd: export PATH="$PATH:/usr/local/bin" && pm2 install pm2-logrotate
+      environment: "{{ env_vars_for_sample_app }}"
       when: "'pm2-logrotate' not in (pm2_job_list | map(attribute='name'))"
 
     - name: Setting up log rotate feature properties for pm2
@@ -218,6 +258,7 @@
           pm2 set pm2-logrotate:max_size 10M
           pm2 set pm2-logrotate:retain 30
           pm2 set pm2-logrotate:compress true
+      environment: "{{ env_vars_for_sample_app }}"
       when: "'pm2-logrotate' not in pm2_job_list_details.stdout"
 
     - name: Create the pm2 log folder structure
@@ -236,3 +277,4 @@
       ansible.builtin.shell:
         cmd: export PATH="$PATH:/usr/local/bin" && pm2 start ecosystem_{{ sample_app_name_cleaned }}.config.js
         chdir: "{{ pm2_js_file_directory }}"
+      environment: "{{ env_vars_for_sample_app }}"
