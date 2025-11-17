@@ -195,16 +195,10 @@
 
         - name: Parse /etc/environment into key=value dictionary
           ansible.builtin.set_fact:
-            env_vars_for_sample_app: >-
-              {{
-                env_file_content.content | 
-                b64decode | 
-                split("\n") |
-                select("match", "^[^#].*=.*$") |
-                map("regex_replace", "^([^=]+)=(.*)$", "{'\\1': '\\2'}") |
-                list | 
-                items2dict
-              }}
+            environment_vars_for_sample_app: "{{ env_content.content | b64decode | split('\n') | 
+                       selectattr('match', 'search', '=') | 
+                       map('split', '=') | 
+                       items2dict }}"
       when: true
 
     
