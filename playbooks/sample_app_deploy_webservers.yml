@@ -214,7 +214,7 @@
           source /etc/environment
           export PATH="$PATH:/usr/local/bin" && npx prisma migrate deploy
         # chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}/__production_build"
-        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}""
+        chdir:  "{{ sample_app_src_dir ~ '/' ~ sample_app_name_cleaned }}"
 
     # - name: Running the sample application
     #   ansible.builtin.shell:
