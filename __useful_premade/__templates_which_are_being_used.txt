@@ -52,3 +52,8 @@ sample_app_version: 0.0.1-normal-build
 dbhost: 172.16.20.198
 git_pat: x
 git_username: aap
+
+playbooks/req4-proper_installation_of_jq_fixed_version.yml
+``````````````````````````````````````````````````````````
+minor_upgrade_version_rhel: 1.6-17.el9_6.2
+minor_upgrade_version_debian: 1.7.1-3ubuntu0.24.04.1
